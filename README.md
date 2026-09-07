@@ -211,6 +211,8 @@ This provides a robust defense against direct ALB access even if someone discove
 
 **NOTE** For any guidance deployment, either Amazon ECS or EKS container orchestration platform can be used, but not both.
 
+**NOTE** The middleware sidecar (Bedrock-format API, chat history, Okta JWT auth) is optional on ECS: set `ENABLE_MIDDLEWARE="false"` in `.env` to run LiteLLM alone, in which case every path (including `/v1/chat/completions`, `/key/generate` and `/user/new`) is served by LiteLLM directly and its native error codes reach the clients.
+
 ## Cost
 
 ### Cost Considerations

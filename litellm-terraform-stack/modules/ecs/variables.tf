@@ -351,3 +351,9 @@ variable "langfuse_host" {
   type    = string
   description = "the hostname of your langfuse deployment."
 }
+
+variable "enable_middleware" {
+  description = "Deploy the FastAPI middleware sidecar (Bedrock-format API, chat history, Okta JWT auth). When false only LiteLLM runs and every path is served by it directly."
+  type        = bool
+  default     = true
+}

@@ -71,7 +71,8 @@ data "aws_ecr_repository" "litellm" {
 }
 
 data "aws_ecr_repository" "middleware" {
-  name = var.ecrMiddlewareRepository
+  count = var.enable_middleware ? 1 : 0
+  name  = var.ecrMiddlewareRepository
 }
 
 output "LiteLLMRepositoryUrl" {
@@ -80,8 +81,8 @@ output "LiteLLMRepositoryUrl" {
 }
 
 output "MiddlewareRepositoryUrl" {
-  description = "The URI of the Middleware ECR repository"
-  value       = data.aws_ecr_repository.middleware.repository_url
+  description = "The URI of the Middleware ECR repository (empty when the middleware is disabled)"
+  value       = var.enable_middleware ? data.aws_ecr_repository.middleware[0].repository_url : ""
 }
 
 output "DatabaseUrlSecretArn" {

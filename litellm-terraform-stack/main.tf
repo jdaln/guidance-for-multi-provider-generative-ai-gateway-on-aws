@@ -25,6 +25,7 @@ module "base" {
   disable_outbound_network_access = var.disable_outbound_network_access
   ecrLitellmRepository = var.ecrLitellmRepository
   ecrMiddlewareRepository = var.ecrMiddlewareRepository
+  enable_middleware = var.enable_middleware
   hostedZoneName = var.hosted_zone_name
   create_private_hosted_zone_in_existing_vpc = var.create_private_hosted_zone_in_existing_vpc
   publicLoadBalancer = var.public_load_balancer
@@ -46,6 +47,7 @@ module "ecs_cluster" {
   log_bucket_arn = var.log_bucket_arn
   ecr_litellm_repository_url = module.base.LiteLLMRepositoryUrl
   ecr_middleware_repository_url = module.base.MiddlewareRepositoryUrl
+  enable_middleware = var.enable_middleware
   litellm_version = var.litellm_version
   config_bucket_name = module.base.ConfigBucketName
   use_route53 = var.use_route53

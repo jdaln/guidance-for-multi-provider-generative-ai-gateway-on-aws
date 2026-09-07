@@ -172,7 +172,9 @@ resource "aws_ecs_task_definition" "litellm" {
         "exit 0"
       ]
     }
-  },
+  }
+%{ if var.enable_middleware }
+  ,
   {
     "name": "MiddlewareContainer",
     "image": "${var.ecr_middleware_repository_url}:latest",
@@ -212,6 +214,7 @@ resource "aws_ecs_task_definition" "litellm" {
       ]
     }
   }
+%{ endif }
 ]
 DEFINITION
 }
@@ -240,10 +243,13 @@ resource "aws_ecs_service" "litellm_service" {
     container_port   = 4000
   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.tg_3000.arn
-    container_name   = "MiddlewareContainer"
-    container_port   = 3000
+  dynamic "load_balancer" {
+    for_each = var.enable_middleware ? [1] : []
+    content {
+      target_group_arn = aws_lb_target_group.tg_3000[0].arn
+      container_name   = "MiddlewareContainer"
+      container_port   = 3000
+    }
   }
 
   deployment_controller {

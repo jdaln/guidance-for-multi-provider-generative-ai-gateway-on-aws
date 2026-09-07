@@ -231,9 +231,18 @@ else
     echo "Skipping docker build and deploy step..."
 fi
 
-cd middleware
-./docker-build-and-deploy.sh $MIDDLEWARE_APP_NAME $ARCH
-cd ..
+ENABLE_MIDDLEWARE="${ENABLE_MIDDLEWARE:-true}"
+if [ "$ENABLE_MIDDLEWARE" = "false" ] && [ "$DEPLOYMENT_PLATFORM" != "ECS" ]; then
+    echo "Error: ENABLE_MIDDLEWARE=false is only supported with DEPLOYMENT_PLATFORM=ECS"
+    exit 1
+fi
+if [ "$ENABLE_MIDDLEWARE" = "true" ]; then
+    cd middleware
+    ./docker-build-and-deploy.sh $MIDDLEWARE_APP_NAME $ARCH
+    cd ..
+else
+    echo "Middleware disabled (ENABLE_MIDDLEWARE=false): skipping middleware image build; LiteLLM serves every path directly."
+fi
 
 echo "Deploying the log bucket terraform stack..."
 cd litellm-s3-log-bucket-terraform
@@ -362,6 +371,7 @@ export TF_VAR_x86_ami_type=$EKS_X86_AMI_TYPE
 export TF_VAR_create_vpc_endpoints_in_existing_vpc=$CREATE_VPC_ENDPOINTS_IN_EXISTING_VPC
 export TF_VAR_ecrLitellmRepository=$APP_NAME
 export TF_VAR_ecrMiddlewareRepository=$MIDDLEWARE_APP_NAME
+export TF_VAR_enable_middleware=${ENABLE_MIDDLEWARE:-true}
 export TF_VAR_rds_instance_class=$RDS_INSTANCE_CLASS
 export TF_VAR_rds_allocated_storage=$RDS_ALLOCATED_STORAGE_GB
 export TF_VAR_redis_node_type=$REDIS_NODE_TYPE

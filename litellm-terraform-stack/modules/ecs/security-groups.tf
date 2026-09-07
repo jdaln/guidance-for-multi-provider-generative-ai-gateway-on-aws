@@ -31,6 +31,7 @@ resource "aws_security_group_rule" "alb_ingress_4000" {
 }
 
 resource "aws_security_group_rule" "alb_ingress_3000" {
+  count                    = var.enable_middleware ? 1 : 0
   type                     = "ingress"
   from_port                = 3000
   to_port                  = 3000

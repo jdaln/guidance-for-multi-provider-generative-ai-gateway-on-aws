@@ -104,6 +104,7 @@ resource "aws_lb_target_group" "tg_4000" {
 
 # Target Group for port 3000 (MiddlewareContainer)
 resource "aws_lb_target_group" "tg_3000" {
+  count       = var.enable_middleware ? 1 : 0
   name        = "${var.name}-3000"
   port        = 3000
   protocol    = "HTTP"
@@ -212,12 +213,13 @@ resource "aws_lb_listener_rule" "catch_all" {
 # Example: Listener Rules for path patterns & priorities
 # bedrock model
 resource "aws_lb_listener_rule" "bedrock_models" {
+  count        = var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
   priority     = 16
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -235,12 +237,13 @@ resource "aws_lb_listener_rule" "bedrock_models" {
 
 # OpenAICompletions
 resource "aws_lb_listener_rule" "openai_completions" {
+  count        = var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
   priority     = 15
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -258,12 +261,13 @@ resource "aws_lb_listener_rule" "openai_completions" {
 
 # ChatCompletions
 resource "aws_lb_listener_rule" "chat_completions" {
+  count        = var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
   priority     = 14
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -281,12 +285,13 @@ resource "aws_lb_listener_rule" "chat_completions" {
 
 # ChatHistory
 resource "aws_lb_listener_rule" "chat_history" {
+  count        = var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
   priority     = 8
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -304,12 +309,13 @@ resource "aws_lb_listener_rule" "chat_history" {
 
 # BedrockChatHistory
 resource "aws_lb_listener_rule" "bedrock_chat_history" {
+  count        = var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
   priority     = 9
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -327,12 +333,13 @@ resource "aws_lb_listener_rule" "bedrock_chat_history" {
 
 # BedrockLiveliness
 resource "aws_lb_listener_rule" "bedrock_liveliness" {
+  count        = var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
   priority     = 10
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -350,12 +357,13 @@ resource "aws_lb_listener_rule" "bedrock_liveliness" {
 
 # SessionIds
 resource "aws_lb_listener_rule" "session_ids" {
+  count        = var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
   priority     = 11
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -373,12 +381,13 @@ resource "aws_lb_listener_rule" "session_ids" {
 
 # KeyGenerate
 resource "aws_lb_listener_rule" "key_generate" {
+  count        = var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
   priority     = 12
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -396,12 +405,13 @@ resource "aws_lb_listener_rule" "key_generate" {
 
 # UserNew
 resource "aws_lb_listener_rule" "user_new" {
+  count        = var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.https.arn
   priority     = 13
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -448,13 +458,13 @@ resource "aws_lb_listener_rule" "health_check_exception_http" {
 
 # bedrock model for HTTP
 resource "aws_lb_listener_rule" "bedrock_models_http" {
-  count        = var.use_cloudfront ? 1 : 0
+  count        = var.use_cloudfront && var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
   priority     = 16
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -480,13 +490,13 @@ resource "aws_lb_listener_rule" "bedrock_models_http" {
 
 # OpenAICompletions for HTTP
 resource "aws_lb_listener_rule" "openai_completions_http" {
-  count        = var.use_cloudfront ? 1 : 0
+  count        = var.use_cloudfront && var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
   priority     = 15
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -512,13 +522,13 @@ resource "aws_lb_listener_rule" "openai_completions_http" {
 
 # ChatCompletions for HTTP
 resource "aws_lb_listener_rule" "chat_completions_http" {
-  count        = var.use_cloudfront ? 1 : 0
+  count        = var.use_cloudfront && var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
   priority     = 14
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -544,13 +554,13 @@ resource "aws_lb_listener_rule" "chat_completions_http" {
 
 # ChatHistory for HTTP
 resource "aws_lb_listener_rule" "chat_history_http" {
-  count        = var.use_cloudfront ? 1 : 0
+  count        = var.use_cloudfront && var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
   priority     = 8
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -576,13 +586,13 @@ resource "aws_lb_listener_rule" "chat_history_http" {
 
 # BedrockChatHistory for HTTP
 resource "aws_lb_listener_rule" "bedrock_chat_history_http" {
-  count        = var.use_cloudfront ? 1 : 0
+  count        = var.use_cloudfront && var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
   priority     = 9
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -608,13 +618,13 @@ resource "aws_lb_listener_rule" "bedrock_chat_history_http" {
 
 # BedrockLiveliness for HTTP
 resource "aws_lb_listener_rule" "bedrock_liveliness_http" {
-  count        = var.use_cloudfront ? 1 : 0
+  count        = var.use_cloudfront && var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
   priority     = 10
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -640,13 +650,13 @@ resource "aws_lb_listener_rule" "bedrock_liveliness_http" {
 
 # SessionIds for HTTP
 resource "aws_lb_listener_rule" "session_ids_http" {
-  count        = var.use_cloudfront ? 1 : 0
+  count        = var.use_cloudfront && var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
   priority     = 11
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -672,13 +682,13 @@ resource "aws_lb_listener_rule" "session_ids_http" {
 
 # KeyGenerate for HTTP
 resource "aws_lb_listener_rule" "key_generate_http" {
-  count        = var.use_cloudfront ? 1 : 0
+  count        = var.use_cloudfront && var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
   priority     = 12
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -704,13 +714,13 @@ resource "aws_lb_listener_rule" "key_generate_http" {
 
 # UserNew for HTTP
 resource "aws_lb_listener_rule" "user_new_http" {
-  count        = var.use_cloudfront ? 1 : 0
+  count        = var.use_cloudfront && var.enable_middleware ? 1 : 0
   listener_arn = aws_lb_listener.http.arn
   priority     = 13
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.tg_3000.arn
+    target_group_arn = aws_lb_target_group.tg_3000[0].arn
   }
 
   condition {
@@ -826,4 +836,55 @@ resource "aws_appautoscaling_policy" "memory_policy" {
     scale_in_cooldown  = 60
     scale_out_cooldown = 60
   }
+}
+
+# The middleware resources became conditional (count); keep existing deployments' state addresses valid.
+moved {
+  from = aws_lb_target_group.tg_3000
+  to   = aws_lb_target_group.tg_3000[0]
+}
+
+moved {
+  from = aws_lb_listener_rule.bedrock_models
+  to   = aws_lb_listener_rule.bedrock_models[0]
+}
+
+moved {
+  from = aws_lb_listener_rule.openai_completions
+  to   = aws_lb_listener_rule.openai_completions[0]
+}
+
+moved {
+  from = aws_lb_listener_rule.chat_completions
+  to   = aws_lb_listener_rule.chat_completions[0]
+}
+
+moved {
+  from = aws_lb_listener_rule.chat_history
+  to   = aws_lb_listener_rule.chat_history[0]
+}
+
+moved {
+  from = aws_lb_listener_rule.bedrock_chat_history
+  to   = aws_lb_listener_rule.bedrock_chat_history[0]
+}
+
+moved {
+  from = aws_lb_listener_rule.bedrock_liveliness
+  to   = aws_lb_listener_rule.bedrock_liveliness[0]
+}
+
+moved {
+  from = aws_lb_listener_rule.session_ids
+  to   = aws_lb_listener_rule.session_ids[0]
+}
+
+moved {
+  from = aws_lb_listener_rule.key_generate
+  to   = aws_lb_listener_rule.key_generate[0]
+}
+
+moved {
+  from = aws_lb_listener_rule.user_new
+  to   = aws_lb_listener_rule.user_new[0]
 }
