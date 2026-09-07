@@ -98,6 +98,8 @@ module "ecs_cluster" {
   master_and_salt_key_secret_arn = module.base.LitellmMasterAndSaltKeySecretArn
   main_db_secret_arn = module.base.DatabaseUrlSecretArn
   vcpus = var.vcpus
+  memory_per_vcpu_mib = var.memory_per_vcpu_mib
+  alb_idle_timeout_seconds = var.alb_idle_timeout_seconds
   cpu_target_utilization_percent = var.cpu_target_utilization_percent
   memory_target_utilization_percent = var.memory_target_utilization_percent
   private_subnets = module.base.private_subnet_ids

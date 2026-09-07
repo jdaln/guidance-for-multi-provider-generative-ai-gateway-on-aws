@@ -366,3 +366,15 @@ variable "redis_password_secret_arn" {
   description = "ARN of the Secrets Manager secret holding the Redis auth token"
   type        = string
 }
+
+variable "memory_per_vcpu_mib" {
+  description = "Task memory in MiB per vCPU. LiteLLM recommends about 4 GiB per worker; 2048 keeps the historical 1:2 ratio."
+  type        = number
+  default     = 2048
+}
+
+variable "alb_idle_timeout_seconds" {
+  description = "ALB idle timeout. Non-streaming LLM completions can take several minutes without sending bytes."
+  type        = number
+  default     = 600
+}
