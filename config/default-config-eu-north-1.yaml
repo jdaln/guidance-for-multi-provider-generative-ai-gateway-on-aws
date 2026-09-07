@@ -17,3 +17,53 @@ model_list:
   - model_name: eu.anthropic.claude-haiku-4-5-20251001-v1:0
     litellm_params:
       model: bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0
+
+  # Friendly aliases for the EU-resident Claude models above
+  - model_name: claude-opus-5-eu
+    litellm_params:
+      model: bedrock/eu.anthropic.claude-opus-5
+  - model_name: claude-sonnet-5-eu
+    litellm_params:
+      model: bedrock/eu.anthropic.claude-sonnet-5
+  - model_name: claude-haiku-4-5-eu
+    litellm_params:
+      model: bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0
+
+  # ---------------------------------------------------------------------------------------------
+  # GLOBAL cross-Region profiles: these models have no EU geo profile. Requests may be processed
+  # in any commercial AWS Region (data leaves the EU). Claude Fable additionally requires the
+  # account data-retention mode "aws_review" (prompts retained by AWS up to 30 days). The
+  # "-global" suffix in the model name is deliberate so users know what they are calling.
+  # ---------------------------------------------------------------------------------------------
+  - model_name: claude-fable-5-global
+    litellm_params:
+      model: bedrock/converse/global.anthropic.claude-fable-5
+
+  - model_name: claude-fable-5-1-global
+    litellm_params:
+      model: bedrock/converse/global.anthropic.claude-fable-5-1
+    model_info:
+      # Not in LiteLLM v1.100.0's price map yet (model launched 2026-09-01): prices per token, USD, from the Bedrock pricing page
+      input_cost_per_token: 0.00001
+      output_cost_per_token: 0.00005
+      max_input_tokens: 1000000
+      max_output_tokens: 128000
+
+  - model_name: gpt-5.6-sol-global
+    litellm_params:
+      model: bedrock/converse/global.openai.gpt-5.6-sol
+
+  - model_name: gpt-5.6-terra-global
+    litellm_params:
+      model: bedrock/converse/global.openai.gpt-5.6-terra
+
+  # EXPERIMENTAL: GPT-6 Astra reached the Bedrock catalog on 2026-09-04 and is still rolling out; AWS has no model
+  # card yet and LiteLLM v1.100.0 has no price entry, so pricing is set manually (OpenAI list price).
+  # Expect "model not available" errors until the rollout reaches this account.
+  - model_name: gpt-6-astra-global
+    litellm_params:
+      model: bedrock/converse/global.openai.gpt-6-astra
+    model_info:
+      input_cost_per_token: 0.00001
+      output_cost_per_token: 0.00005
+

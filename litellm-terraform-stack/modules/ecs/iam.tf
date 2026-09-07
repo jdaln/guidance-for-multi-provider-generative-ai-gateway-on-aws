@@ -95,8 +95,20 @@ data "aws_iam_policy_document" "task_role_policy_doc" {
   }
 
   statement {
-    sid       = "BedrockAccess"
-    actions   = ["bedrock:*"]
+    sid = "BedrockAccess"
+    # Inference (Converse is authorised through InvokeModel), guardrail evaluation and the read-only
+    # calls LiteLLM makes to resolve inference profiles. Resource "*" is needed because cross-Region
+    # inference profiles fan out to foundation-model ARNs in other Regions.
+    actions = [
+      "bedrock:InvokeModel",
+      "bedrock:InvokeModelWithResponseStream",
+      "bedrock:ApplyGuardrail",
+      "bedrock:GetInferenceProfile",
+      "bedrock:ListInferenceProfiles",
+      "bedrock:GetFoundationModel",
+      "bedrock:ListFoundationModels",
+      "bedrock:GetGuardrail",
+    ]
     resources = ["*"]
   }
 
