@@ -54,3 +54,16 @@ resource "aws_secretsmanager_secret_version" "db_url_secret_ver" {
 
   secret_string = "postgresql://llmproxy:${local.litellm_db_password}@${aws_db_instance.database.endpoint}/litellm"
 }
+
+###############################################################################
+# Redis auth token (referenced by the ECS task as a secret instead of a plain env var)
+###############################################################################
+resource "aws_secretsmanager_secret" "redis_auth_token" {
+  name_prefix             = "${var.name}-RedisAuthToken-"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "redis_auth_token_ver" {
+  secret_id     = aws_secretsmanager_secret.redis_auth_token.id
+  secret_string = random_password.redis_password_main.result
+}

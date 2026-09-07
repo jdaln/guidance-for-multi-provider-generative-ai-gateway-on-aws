@@ -351,3 +351,8 @@ variable "langfuse_host" {
   type    = string
   description = "the hostname of your langfuse deployment."
 }
+
+variable "redis_password_secret_arn" {
+  description = "ARN of the Secrets Manager secret holding the Redis auth token"
+  type        = string
+}
