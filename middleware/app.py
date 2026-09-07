@@ -6,6 +6,7 @@ from typing import Dict, Any, AsyncGenerator, List, Optional
 from openai import AsyncOpenAI
 import struct
 import zlib
+import base64
 import boto3
 import re
 import os
@@ -249,28 +250,187 @@ def create_event_message(payload, event_type_name):
     return message_parts + message_crc
 
 
+# Converse content-block keys that have no faithful OpenAI/LiteLLM equivalent
+# in this compatibility layer.  They are rejected with HTTP 400 instead of being
+# silently dropped (silent dropping is what caused issue #123).
+_UNSUPPORTED_CONTENT_BLOCK_KEYS = (
+    "toolUse",
+    "toolResult",
+    "document",
+    "video",
+    "reasoningContent",
+    "cachePoint",
+    "citationsContent",
+)
+
+
+def _guard_content_text(block: Dict[str, Any]) -> Optional[str]:
+    """Return guardContent.text.text (GuardrailConverseContentBlock) if present."""
+    guard = block.get("guardContent")
+    if not isinstance(guard, dict):
+        return None
+    text_block = guard.get("text")
+    if isinstance(text_block, dict):
+        return text_block.get("text")
+    return None
+
+
+def _content_block_to_openai(
+    block: Dict[str, Any], msg_index: int, block_index: int
+) -> Optional[Dict[str, Any]]:
+    """
+    Map ONE Bedrock Converse ContentBlock to ONE OpenAI content part that
+    LiteLLM's bedrock_converse transformation understands.
+
+      {"text": ...}                     -> {"type": "text", "text": ...}
+      {"guardContent": {"text": {...}}} -> {"type": "guarded_text", "text": ...}
+                                           (LiteLLM re-wraps it as guardContent)
+      {"image": {..., "source": {"bytes": <base64>}}}
+                                        -> {"type": "image_url", "image_url": {"url": "data:image/<fmt>;base64,..."}}
+      _UNSUPPORTED_CONTENT_BLOCK_KEYS   -> HTTP 400 with the offending block named
+
+    Returns None for blocks that carry no content (e.g. {"text": ""}).
+
+    Known limitation: GuardrailConverseTextBlock.qualifiers
+    (grounding_source | query | guard_content) cannot be expressed through the
+    OpenAI-compatible format and are dropped.
+    """
+    if "text" in block:
+        text = block["text"]
+        if not isinstance(text, str) or not text.strip():
+            return None
+        return {"type": "text", "text": text}
+
+    guard_text = _guard_content_text(block)
+    if guard_text is not None:
+        if not guard_text.strip():
+            return None
+        return {"type": "guarded_text", "text": guard_text}
+
+    if "image" in block:
+        image = block["image"] or {}
+        fmt = image.get("format", "png")
+        source = image.get("source") or {}
+        data = source.get("bytes")
+        if isinstance(data, (bytes, bytearray)):
+            data = base64.b64encode(data).decode("ascii")
+        if not isinstance(data, str) or not data:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": (
+                        f"messages[{msg_index}].content[{block_index}].image must use "
+                        "source.bytes; s3Location sources are not supported by this gateway"
+                    )
+                },
+            )
+        return {
+            "type": "image_url",
+            "image_url": {"url": f"data:image/{fmt};base64,{data}"},
+        }
+
+    for key in _UNSUPPORTED_CONTENT_BLOCK_KEYS:
+        if key in block:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": (
+                        f"messages[{msg_index}].content[{block_index}] uses the Converse "
+                        f"content block '{key}', which is not supported by the "
+                        "/bedrock/model/*/converse compatibility layer. Supported blocks: "
+                        "text, guardContent, image."
+                    )
+                },
+            )
+
+    raise HTTPException(
+        status_code=400,
+        detail={
+            "error": (
+                f"messages[{msg_index}].content[{block_index}] has an unrecognised "
+                f"content block: {sorted(block.keys())}"
+            )
+        },
+    )
+
+
 def convert_messages_to_openai(
     bedrock_messages: List[Dict[str, Any]],
     system: Optional[List[Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
-    openai_messages = []
+    openai_messages: List[Dict[str, Any]] = []
 
     if system:
-        system_text = " ".join(item.get("text", "") for item in system)
+        # Accept {"text": ...} and {"guardContent": {"text": {"text": ...}}}
+        # system blocks; join separate blocks with a newline.
+        system_parts = []
+        for item in system:
+            text = item.get("text")
+            if text is None:
+                text = _guard_content_text(item)
+            if text:
+                system_parts.append(text)
+        system_text = "\n".join(system_parts)
         if system_text:
             openai_messages.append({"role": "system", "content": system_text})
 
-    for msg in bedrock_messages:
+    for msg_index, msg in enumerate(bedrock_messages):
         role = msg.get("role")
-        content = ""
-        if "content" in msg:
-            for content_item in msg["content"]:
-                if "text" in content_item:
-                    content += content_item["text"]
+        parts: List[Dict[str, Any]] = []
+        for block_index, block in enumerate(msg.get("content") or []):
+            if not isinstance(block, dict):
+                raise HTTPException(
+                    status_code=400,
+                    detail={
+                        "error": f"messages[{msg_index}].content[{block_index}] must be an object"
+                    },
+                )
+            part = _content_block_to_openai(block, msg_index, block_index)
+            if part is not None:
+                parts.append(part)
+
+        # Never emit {"role": "user", "content": ""}: that is what produced
+        # "A conversation must start with a user message" in issue #123.
+        if not parts:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": (
+                        f"messages[{msg_index}] ({role}) has no non-empty content blocks "
+                        "after conversion; Bedrock Converse requires at least one."
+                    )
+                },
+            )
+
+        # A single plain text block keeps the legacy string form (backwards
+        # compatible with stored chat history).  Anything else is sent as a
+        # list of content parts, so multiple text blocks are no longer
+        # concatenated without a separator and guardContent survives.
+        if len(parts) == 1 and parts[0]["type"] == "text":
+            content: Any = parts[0]["text"]
+        else:
+            content = parts
 
         openai_messages.append({"role": role, "content": content})
 
     return openai_messages
+
+
+# Keys this middleware produces that are first-class OpenAI SDK kwargs.  The
+# streaming path calls AsyncOpenAI().chat.completions.create(**params) and the
+# SDK raises TypeError for unknown keyword arguments, so everything else
+# (guardrailConfig, top_k, thinking, ...) must travel in `extra_body`.
+_OPENAI_SDK_KWARGS = frozenset(
+    {"model", "messages", "stream", "temperature", "max_tokens", "stop", "top_p"}
+)
+
+
+def split_params_for_openai_sdk(completion_params: Dict[str, Any]) -> Dict[str, Any]:
+    sdk_kwargs = {k: v for k, v in completion_params.items() if k in _OPENAI_SDK_KWARGS}
+    extra_body = {k: v for k, v in completion_params.items() if k not in _OPENAI_SDK_KWARGS}
+    if extra_body:
+        sdk_kwargs["extra_body"] = extra_body
+    return sdk_kwargs
 
 
 async def convert_bedrock_to_openai(
@@ -325,6 +485,24 @@ async def convert_bedrock_to_openai(
         if "topP" in config:
             completion_params["top_p"] = config["topP"]
 
+    # Forward the Converse guardrailConfig block unchanged.  LiteLLM accepts
+    # `guardrailConfig` as a Bedrock provider-specific param on
+    # /v1/chat/completions and re-emits it on the Converse request
+    # (https://docs.litellm.ai/docs/providers/bedrock#usage---bedrock-guardrails).
+    if "guardrailConfig" in bedrock_request:
+        guardrail_config = bedrock_request["guardrailConfig"]
+        if (
+            not isinstance(guardrail_config, dict)
+            or "guardrailIdentifier" not in guardrail_config
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "guardrailConfig must be an object with guardrailIdentifier"
+                },
+            )
+        completion_params["guardrailConfig"] = guardrail_config
+
     if "additionalModelRequestFields" in bedrock_request:
         # Exclude "session_id" from being added to completion_params
         additional_fields = {
@@ -363,6 +541,11 @@ async def convert_openai_to_bedrock(openai_response: Dict[str, Any]) -> Dict[str
         }
         finish_reason = openai_response["choices"][0]["finish_reason"]
         bedrock_response["stopReason"] = stop_reason_map.get(finish_reason, "end_turn")
+
+    # LiteLLM attaches the Bedrock guardrail trace when guardrailConfig.trace
+    # is enabled; pass it back to boto3 callers under the Converse key.
+    if "trace" in openai_response:
+        bedrock_response["trace"] = openai_response["trace"]
 
     return bedrock_response
 
@@ -605,7 +788,9 @@ async def process_streaming_chat_request(
     # print(f'final message sent to llm: {openai_params["messages"]}')
 
     client = AsyncOpenAI(api_key=api_key, base_url=LITELLM_ENDPOINT)
-    stream = await client.chat.completions.create(**openai_params)
+    stream = await client.chat.completions.create(
+        **split_params_for_openai_sdk(openai_params)
+    )
 
     assistant_content_parts = []
 
@@ -1025,7 +1210,23 @@ def convert_openai_to_bedrock_history(
         role = msg.get("role")
         content = msg.get("content", "")
         if role == "system":
+            if isinstance(content, list):
+                content = "\n".join(p.get("text", "") for p in content if "text" in p)
             system_messages.append({"text": content})
+        elif isinstance(content, list):
+            blocks = []
+            for part in content:
+                ptype = part.get("type")
+                if ptype == "guarded_text":
+                    blocks.append({"guardContent": {"text": {"text": part["text"]}}})
+                elif ptype == "text":
+                    blocks.append({"text": part["text"]})
+                elif ptype == "image_url":
+                    url = part["image_url"]["url"]
+                    header, _, b64 = url.partition(",")
+                    fmt = header[len("data:image/") :].split(";")[0] or "png"
+                    blocks.append({"image": {"format": fmt, "source": {"bytes": b64}}})
+            bedrock_messages.append({"role": role, "content": blocks})
         else:
             bedrock_messages.append({"role": role, "content": [{"text": content}]})
 
