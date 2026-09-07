@@ -65,7 +65,7 @@ resource "aws_ecs_task_definition" "litellm" {
       },
       {
         "name": "UI_PASSWORD",
-        "valueFrom": "${var.master_and_salt_key_secret_arn}:LITELLM_MASTER_KEY::"
+        "valueFrom": "${var.master_and_salt_key_secret_arn}:UI_PASSWORD::"
       },
       {
         "name": "LITELLM_SALT_KEY",

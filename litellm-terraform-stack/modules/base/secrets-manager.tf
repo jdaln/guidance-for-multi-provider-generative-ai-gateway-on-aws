@@ -12,6 +12,12 @@ resource "random_password" "litellm_salt" {
   special = false
 }
 
+# Dedicated Admin UI password so the master key is never typed into a browser
+resource "random_password" "litellm_ui_password" {
+  length  = 32
+  special = false
+}
+
 
 # Create a secret (the "shell" or "container" for the key)
 resource "aws_secretsmanager_secret" "litellm_master_salt" {
@@ -31,6 +37,7 @@ resource "aws_secretsmanager_secret_version" "litellm_master_salt_ver" {
   secret_string = jsonencode({
     LITELLM_MASTER_KEY = local.litellm_master_key
     LITELLM_SALT_KEY   = local.litellm_salt_key
+    UI_PASSWORD        = random_password.litellm_ui_password.result
   })
 }
 
