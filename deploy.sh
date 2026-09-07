@@ -318,6 +318,19 @@ if [ -n "${LANGFUSE_PUBLIC_KEY}" ] && [ -n "${LANGFUSE_SECRET_KEY}" ]; then
     echo "Updated config.yaml with 'langfuse' added to success callback array"
 fi
 
+# Optionally enforce an Amazon Bedrock Guardrail on every request, on the input (pre_call) and on the
+# generated output (post_call). See https://docs.litellm.ai/docs/proxy/guardrails/bedrock
+if [ -n "${BEDROCK_GUARDRAIL_ID:-}" ]; then
+    BEDROCK_GUARDRAIL_VERSION="${BEDROCK_GUARDRAIL_VERSION:-DRAFT}"
+    yq eval "
+      .guardrails = ((.guardrails // []) | map(select(.guardrail_name != \"bedrock-input-guard\" and .guardrail_name != \"bedrock-output-guard\")))
+        + [{\"guardrail_name\": \"bedrock-input-guard\",  \"litellm_params\": {\"guardrail\": \"bedrock\", \"mode\": \"pre_call\",  \"guardrailIdentifier\": \"${BEDROCK_GUARDRAIL_ID}\", \"guardrailVersion\": \"${BEDROCK_GUARDRAIL_VERSION}\", \"aws_region_name\": \"${aws_region}\", \"default_on\": true}},
+           {\"guardrail_name\": \"bedrock-output-guard\", \"litellm_params\": {\"guardrail\": \"bedrock\", \"mode\": \"post_call\", \"guardrailIdentifier\": \"${BEDROCK_GUARDRAIL_ID}\", \"guardrailVersion\": \"${BEDROCK_GUARDRAIL_VERSION}\", \"aws_region_name\": \"${aws_region}\", \"default_on\": true}}]
+    " -i config/config.yaml
+
+    echo "Updated config.yaml with Bedrock Guardrail ${BEDROCK_GUARDRAIL_ID} (version ${BEDROCK_GUARDRAIL_VERSION}) enforced on input and output of every request"
+fi
+
 echo "Deploying litellm-terraform-stack"
 cd litellm-terraform-stack
 
