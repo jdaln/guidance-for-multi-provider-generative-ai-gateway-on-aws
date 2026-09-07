@@ -346,6 +346,28 @@ variable "rds_allocated_storage" {
   description = "The allocated storage in GB for the RDS database"
 }
 
+variable "rds_backup_retention_days" {
+  type        = number
+  description = "Automated RDS backup retention in days (0 disables backups)."
+  default     = 7
+}
+
+variable "rds_deletion_protection" {
+  type        = bool
+  description = "Enable RDS deletion protection and a final snapshot on destroy (recommended for production)."
+  default     = false
+}
+
+variable "rds_log_statement" {
+  type        = string
+  description = "PostgreSQL log_statement parameter: none, ddl, mod or all."
+  default     = "ddl"
+  validation {
+    condition     = contains(["none", "ddl", "mod", "all"], var.rds_log_statement)
+    error_message = "rds_log_statement must be one of none, ddl, mod, all."
+  }
+}
+
 variable "redis_node_type" {
   type        = string
   description = "The node type for Redis clusters"

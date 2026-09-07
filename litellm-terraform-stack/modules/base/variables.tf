@@ -80,3 +80,21 @@ variable "use_route53" {
   type        = bool
   default     = false
 }
+
+variable "rds_backup_retention_days" {
+  description = "Automated RDS backup retention in days (0 disables backups)."
+  type        = number
+  default     = 7
+}
+
+variable "rds_deletion_protection" {
+  description = "Enable RDS deletion protection and a final snapshot on destroy. Set to false for disposable environments so undeploy can remove the database."
+  type        = bool
+  default     = false
+}
+
+variable "rds_log_statement" {
+  description = "PostgreSQL log_statement parameter (none, ddl, mod, all)."
+  type        = string
+  default     = "ddl"
+}

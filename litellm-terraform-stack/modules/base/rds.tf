@@ -53,16 +53,17 @@ resource "aws_db_parameter_group" "example_pg" {
   # Update the family to match your PostgreSQL version
   family = "postgres15"
 
-  # Enable logging of all statements
+  # Log schema changes only: logging every statement copies each spend-log insert (key hashes, user
+  # identifiers) into CloudWatch and costs write throughput. Set to "all" when troubleshooting.
   parameter {
     name  = "log_statement"
-    value = "all"
+    value = var.rds_log_statement
   }
 
-  # Log statements that take longer than 1ms
+  # Log statements slower than one second
   parameter {
     name  = "log_min_duration_statement"
-    value = "1"
+    value = "1000"
   }
 }
 
@@ -80,8 +81,10 @@ resource "aws_db_instance" "database" {
   vpc_security_group_ids    = [aws_security_group.db_sg.id]
   username                  = jsondecode(aws_secretsmanager_secret_version.db_secret_main_version.secret_string)["username"]
   password                  = jsondecode(aws_secretsmanager_secret_version.db_secret_main_version.secret_string)["password"]
-  skip_final_snapshot       = true
-  deletion_protection       = false
+  skip_final_snapshot       = !var.rds_deletion_protection
+  final_snapshot_identifier = var.rds_deletion_protection ? "${var.name}-litellm-db-final" : null
+  deletion_protection       = var.rds_deletion_protection
+  backup_retention_period   = var.rds_backup_retention_days
   multi_az = true
   performance_insights_enabled = true
   enabled_cloudwatch_logs_exports = ["postgresql"]
