@@ -361,3 +361,8 @@ variable "litellm_log_level" {
     error_message = "litellm_log_level must be one of DEBUG, INFO, WARNING, ERROR."
   }
 }
+
+variable "redis_password_secret_arn" {
+  description = "ARN of the Secrets Manager secret holding the Redis auth token"
+  type        = string
+}

@@ -130,3 +130,8 @@ output "litellm_master_key" {
 output "litellm_salt_key" {
   value = local.litellm_salt_key
 }
+
+output "RedisAuthTokenSecretArn" {
+  description = "Secrets Manager secret holding the Redis auth token"
+  value       = aws_secretsmanager_secret.redis_auth_token.arn
+}

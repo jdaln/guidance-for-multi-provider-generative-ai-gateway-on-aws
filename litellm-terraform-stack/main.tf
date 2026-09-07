@@ -47,6 +47,7 @@ module "ecs_cluster" {
   redis_host = module.base.RedisHost
   redis_port = module.base.RedisPort
   redis_password = module.base.RedisPassword
+  redis_password_secret_arn = module.base.RedisAuthTokenSecretArn
   log_bucket_arn = var.log_bucket_arn
   ecr_litellm_repository_url = module.base.LiteLLMRepositoryUrl
   ecr_middleware_repository_url = module.base.MiddlewareRepositoryUrl

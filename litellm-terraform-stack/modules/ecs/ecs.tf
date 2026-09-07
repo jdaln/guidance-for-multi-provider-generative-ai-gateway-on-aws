@@ -44,7 +44,6 @@ resource "aws_ecs_task_definition" "litellm" {
       { "name": "UI_USERNAME", "value": "admin" },
       { "name": "REDIS_HOST", "value": "${var.redis_host}" },
       { "name": "REDIS_PORT", "value": "${var.redis_port}" },
-      { "name": "REDIS_PASSWORD", "value": "${var.redis_password}" },
       { "name": "REDIS_SSL", "value": "True" },
       { "name": "LANGSMITH_PROJECT", "value": "${var.langsmith_project}" },
       { "name": "LANGSMITH_DEFAULT_RUN_NAME", "value": "${var.langsmith_default_run_name}" },
@@ -58,6 +57,10 @@ resource "aws_ecs_task_definition" "litellm" {
       {
         "name": "DATABASE_URL",
         "valueFrom": "${var.main_db_secret_arn}"
+      },
+      {
+        "name": "REDIS_PASSWORD",
+        "valueFrom": "${var.redis_password_secret_arn}"
       },
       {
         "name": "LITELLM_MASTER_KEY",
