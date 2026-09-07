@@ -67,3 +67,15 @@ model_list:
     litellm_params:
       model: bedrock/eu.meta.llama3-2-1b-instruct-v1:0
 
+  # Anthropic Claude 5 family through the EU geo cross-Region inference profile (requests stay within EU Regions)
+  - model_name: eu.anthropic.claude-opus-5
+    litellm_params:
+      model: bedrock/eu.anthropic.claude-opus-5
+
+  - model_name: eu.anthropic.claude-sonnet-5
+    litellm_params:
+      model: bedrock/eu.anthropic.claude-sonnet-5
+
+  - model_name: eu.anthropic.claude-haiku-4-5-20251001-v1:0
+    litellm_params:
+      model: bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0
