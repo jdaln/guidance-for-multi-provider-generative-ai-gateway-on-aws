@@ -49,9 +49,15 @@ resource "aws_db_subnet_group" "main" {
 }
 
 resource "aws_db_parameter_group" "example_pg" {
-  name   = "rds-postgres-parameter-group"
-  # Update the family to match your PostgreSQL version
-  family = "postgres15"
+  # name_prefix + create_before_destroy let Terraform replace the group when the family changes
+  # (a major version upgrade) without first deleting the group that the instance still uses.
+  name_prefix = "${var.name}-litellm-pg-"
+  # Must match the major version in aws_db_instance.database.engine_version
+  family = "postgres17"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   # Enable logging of all statements
   parameter {
@@ -70,7 +76,8 @@ resource "aws_db_parameter_group" "example_pg" {
 resource "aws_db_instance" "database" {
   identifier                = "${var.name}-litellm-db"
   engine                    = "postgres"
-  engine_version           = "15" # or "15.x"
+  engine_version           = "17" # major-only prefix; RDS picks the latest minor because auto_minor_version_upgrade = true
+  allow_major_version_upgrade = true # required for in-place 15 -> 17 upgrades of existing stacks
   instance_class            = var.rds_instance_class
   storage_type              = "gp3"
   allocated_storage         = var.rds_allocated_storage
