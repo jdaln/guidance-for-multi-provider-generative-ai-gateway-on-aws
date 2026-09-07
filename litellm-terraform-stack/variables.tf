@@ -326,6 +326,12 @@ variable "create_vpc_endpoints_in_existing_vpc" {
   description = "If using an existing VPC, set this to true to also create interface/gateway endpoints within it."
 }
 
+variable "create_bedrock_agent_endpoint" {
+  type        = bool
+  default     = true
+  description = "Create the bedrock-agent Interface VPC endpoint. Set to false in Regions without Agents for Amazon Bedrock (e.g. eu-north-1)."
+}
+
 variable "ecrLitellmRepository" {
   type        = string
   description = "Name of the LiteLLM ECR repository"

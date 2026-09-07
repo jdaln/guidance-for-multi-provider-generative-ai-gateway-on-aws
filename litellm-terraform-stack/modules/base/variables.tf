@@ -80,3 +80,9 @@ variable "use_route53" {
   type        = bool
   default     = false
 }
+
+variable "create_bedrock_agent_endpoint" {
+  description = "Whether to create the bedrock-agent Interface VPC endpoint (used by the middleware for Amazon Bedrock Managed Prompts). Set to false in Regions where Agents for Amazon Bedrock is not offered (for example eu-north-1); there the endpoint service lookup would fail the whole apply."
+  type        = bool
+  default     = true
+}

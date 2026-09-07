@@ -195,6 +195,7 @@ export TF_VAR_x86_instance_type=$EKS_X86_INSTANCE_TYPE
 export TF_VAR_arm_ami_type=$EKS_ARM_AMI_TYPE
 export TF_VAR_x86_ami_type=$EKS_X86_AMI_TYPE
 export TF_VAR_create_vpc_endpoints_in_existing_vpc=$CREATE_VPC_ENDPOINTS_IN_EXISTING_VPC
+export TF_VAR_create_bedrock_agent_endpoint=${CREATE_BEDROCK_AGENT_ENDPOINT:-true}
 export TF_VAR_ecrLitellmRepository=$APP_NAME
 export TF_VAR_ecrMiddlewareRepository=$MIDDLEWARE_APP_NAME
 export TF_VAR_rds_instance_class=$RDS_INSTANCE_CLASS
