@@ -113,6 +113,8 @@ locals {
 }
 
 data "aws_vpc_endpoint_service" "bedrock_agent" {
+  # Only looked up when the endpoint is wanted: the service does not exist in every Region
+  count        = local.create_endpoints && var.create_bedrock_agent_endpoint ? 1 : 0
   # This service name must match exactly what you used in the resource
   service_name = "com.amazonaws.${data.aws_region.current.name}.bedrock-agent"
 }
@@ -134,8 +136,8 @@ locals {
   # Suppose local.chosen_subnet_ids is the list of subnets you want to use
   # for endpoints in general. We filter them down to only those whose AZ
   # is in the service's list of availability_zones.
-  bedrock_agent_compatible_subnets = [
-    for subnet_id in local.chosen_subnet_ids : subnet_id 
-    if contains(data.aws_vpc_endpoint_service.bedrock_agent.availability_zones, local.subnet_az_map[subnet_id])
-  ]
+  bedrock_agent_compatible_subnets = local.create_endpoints && var.create_bedrock_agent_endpoint ? [
+    for subnet_id in local.chosen_subnet_ids : subnet_id
+    if contains(data.aws_vpc_endpoint_service.bedrock_agent[0].availability_zones, local.subnet_az_map[subnet_id])
+  ] : []
 }

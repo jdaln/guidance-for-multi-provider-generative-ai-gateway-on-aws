@@ -126,7 +126,7 @@ resource "aws_vpc_endpoint" "bedrock_runtime" {
 }
 
 resource "aws_vpc_endpoint" "bedrock_agent" {
-  count                    = local.create_endpoints ? 1 : 0
+  count                    = local.create_endpoints && var.create_bedrock_agent_endpoint ? 1 : 0
   vpc_id                   = local.final_vpc_id
   service_name             = "com.amazonaws.${data.aws_region.current.name}.bedrock-agent"
   vpc_endpoint_type        = "Interface"
