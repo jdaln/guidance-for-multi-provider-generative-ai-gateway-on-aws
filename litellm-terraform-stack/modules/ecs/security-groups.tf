@@ -63,6 +63,14 @@ resource "aws_security_group_rule" "db_ingress" {
   description              = "Allow ECS tasks to connect to RDS"
 }
 
+locals {
+  # Public ALB without CloudFront: restrict HTTPS to the client allow-list when one is given,
+  # otherwise keep the previous behaviour (any IP, WAF-protected).
+  alb_https_ingress_cidrs = var.public_load_balancer ? (
+    (!var.use_cloudfront && length(var.alb_allowed_cidrs) > 0) ? var.alb_allowed_cidrs : ["0.0.0.0/0"]
+  ) : var.private_subnets_cidr_blocks
+}
+
 resource "aws_security_group" "alb_sg" {
   name        = "${var.name}-alb-sg"
   description = "Security group for ALB"
@@ -78,22 +86,25 @@ resource "aws_security_group" "alb_sg" {
     protocol    = "tcp"
     from_port   = 443
     to_port     = 443
-    cidr_blocks = var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks
+    cidr_blocks = local.alb_https_ingress_cidrs
   }
-  
-  # Add HTTP ingress for CloudFront origin connections
-  # Security for HTTP is provided by custom header authentication
-  ingress {
-    description = "HTTP traffic for CloudFront origin"
-    protocol    = "tcp"
-    from_port   = 80
-    to_port     = 80
-    cidr_blocks = var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks
+
+  # HTTP ingress is only needed for CloudFront origin connections (protected by the custom header).
+  # Without CloudFront the ALB is HTTPS-only.
+  dynamic "ingress" {
+    for_each = var.use_cloudfront ? [1] : []
+    content {
+      description = "HTTP traffic for CloudFront origin"
+      protocol    = "tcp"
+      from_port   = 80
+      to_port     = 80
+      cidr_blocks = var.public_load_balancer ? ["0.0.0.0/0"] : var.private_subnets_cidr_blocks
+    }
   }
 
   tags = {
     Name = "${var.name}-alb-sg"
-    SecurityModel = var.use_cloudfront ? "CloudFront-Protected" : (var.public_load_balancer ? "Public-WAF-Protected" : "Private-VPC-Only")
+    SecurityModel = var.use_cloudfront ? "CloudFront-Protected" : (var.public_load_balancer ? (length(var.alb_allowed_cidrs) > 0 ? "Public-IP-Allowlist-WAF-Protected" : "Public-WAF-Protected") : "Private-VPC-Only")
   }
 
   # Allow all outbound

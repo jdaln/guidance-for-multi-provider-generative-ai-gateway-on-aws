@@ -103,6 +103,11 @@ if [ -z "$CLOUDFRONT_PRICE_CLASS" ]; then
   echo "→ Setting CLOUDFRONT_PRICE_CLASS=${CLOUDFRONT_PRICE_CLASS} (default)"
 fi
 
+if [ "$USE_CLOUDFRONT" = "false" ] && [ "${PUBLIC_LOAD_BALANCER:-true}" = "true" ] && [ -z "${ALB_ALLOWED_CIDRS:-}" ]; then
+  echo "WARNING: the ALB is public, CloudFront is disabled and ALB_ALLOWED_CIDRS is empty: HTTPS is accepted from any IP (WAF-protected only)."
+  echo "         Set ALB_ALLOWED_CIDRS in .env to restrict access to your client IP ranges."
+fi
+
 # Check if bucket exists
 if aws s3api head-bucket --bucket "$TERRAFORM_S3_BUCKET_NAME" 2>/dev/null; then
     echo "Terraform Bucket $TERRAFORM_S3_BUCKET_NAME already exists, skipping creation"
@@ -320,6 +325,14 @@ export TF_VAR_azure_openai_api_key=$AZURE_OPENAI_API_KEY
 export TF_VAR_azure_api_key=$AZURE_API_KEY
 export TF_VAR_anthropic_api_key=$ANTHROPIC_API_KEY
 export TF_VAR_public_load_balancer=$PUBLIC_LOAD_BALANCER
+# Comma-separated client CIDR allow-list for a public ALB without CloudFront, e.g. "203.0.113.10/32,198.51.100.0/24"
+ALB_ALLOWED_CIDRS_COMPACT="${ALB_ALLOWED_CIDRS:-}"
+ALB_ALLOWED_CIDRS_COMPACT="${ALB_ALLOWED_CIDRS_COMPACT// /}"
+if [ -n "$ALB_ALLOWED_CIDRS_COMPACT" ]; then
+    export TF_VAR_alb_allowed_cidrs="[\"${ALB_ALLOWED_CIDRS_COMPACT//,/\",\"}\"]"
+else
+    export TF_VAR_alb_allowed_cidrs="[]"
+fi
 export TF_VAR_existing_cluster_name=$EXISTING_EKS_CLUSTER_NAME
 export TF_VAR_groq_api_key=$GROQ_API_KEY
 export TF_VAR_cohere_api_key=$COHERE_API_KEY

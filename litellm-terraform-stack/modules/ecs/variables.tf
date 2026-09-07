@@ -351,3 +351,13 @@ variable "langfuse_host" {
   type    = string
   description = "the hostname of your langfuse deployment."
 }
+
+variable "alb_allowed_cidrs" {
+  description = "Client IPv4 CIDR blocks allowed to reach a public ALB when CloudFront is not used. Empty list keeps the ALB open to any IP (WAF-protected only)."
+  type        = list(string)
+  default     = []
+  validation {
+    condition     = alltrue([for c in var.alb_allowed_cidrs : can(regex("^([0-9]{1,3}\\.){3}[0-9]{1,3}/[0-9]{1,2}$", c))])
+    error_message = "alb_allowed_cidrs must contain IPv4 CIDR blocks such as 203.0.113.10/32."
+  }
+}

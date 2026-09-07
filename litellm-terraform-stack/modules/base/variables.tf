@@ -80,3 +80,9 @@ variable "use_route53" {
   type        = bool
   default     = false
 }
+
+variable "waf_allowed_cidrs" {
+  description = "When non-empty, the regional WAF blocks every request whose client IP is outside these IPv4 CIDR blocks (used for a public ALB without CloudFront)."
+  type        = list(string)
+  default     = []
+}

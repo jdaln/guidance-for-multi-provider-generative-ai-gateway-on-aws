@@ -18,8 +18,10 @@ resource "aws_lb" "this" {
    }
 }
 
-# HTTP Listener for CloudFront origin connection
+# HTTP Listener for CloudFront origin connection (CloudFront reaches the ALB over HTTP with the secret header).
+# Without CloudFront the ALB is HTTPS-only, so no plaintext listener is created.
 resource "aws_lb_listener" "http" {
+  count             = var.use_cloudfront ? 1 : 0
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
@@ -423,7 +425,7 @@ resource "aws_lb_listener_rule" "user_new" {
 # Health check exception rule for HTTP - highest priority
 resource "aws_lb_listener_rule" "health_check_exception_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 4  # Highest priority we can safely use
 
   action {
@@ -449,7 +451,7 @@ resource "aws_lb_listener_rule" "health_check_exception_http" {
 # bedrock model for HTTP
 resource "aws_lb_listener_rule" "bedrock_models_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 16
 
   action {
@@ -481,7 +483,7 @@ resource "aws_lb_listener_rule" "bedrock_models_http" {
 # OpenAICompletions for HTTP
 resource "aws_lb_listener_rule" "openai_completions_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 15
 
   action {
@@ -513,7 +515,7 @@ resource "aws_lb_listener_rule" "openai_completions_http" {
 # ChatCompletions for HTTP
 resource "aws_lb_listener_rule" "chat_completions_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 14
 
   action {
@@ -545,7 +547,7 @@ resource "aws_lb_listener_rule" "chat_completions_http" {
 # ChatHistory for HTTP
 resource "aws_lb_listener_rule" "chat_history_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 8
 
   action {
@@ -577,7 +579,7 @@ resource "aws_lb_listener_rule" "chat_history_http" {
 # BedrockChatHistory for HTTP
 resource "aws_lb_listener_rule" "bedrock_chat_history_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 9
 
   action {
@@ -609,7 +611,7 @@ resource "aws_lb_listener_rule" "bedrock_chat_history_http" {
 # BedrockLiveliness for HTTP
 resource "aws_lb_listener_rule" "bedrock_liveliness_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 10
 
   action {
@@ -641,7 +643,7 @@ resource "aws_lb_listener_rule" "bedrock_liveliness_http" {
 # SessionIds for HTTP
 resource "aws_lb_listener_rule" "session_ids_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 11
 
   action {
@@ -673,7 +675,7 @@ resource "aws_lb_listener_rule" "session_ids_http" {
 # KeyGenerate for HTTP
 resource "aws_lb_listener_rule" "key_generate_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 12
 
   action {
@@ -705,7 +707,7 @@ resource "aws_lb_listener_rule" "key_generate_http" {
 # UserNew for HTTP
 resource "aws_lb_listener_rule" "user_new_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 13
 
   action {
@@ -737,7 +739,7 @@ resource "aws_lb_listener_rule" "user_new_http" {
 # DEFAULT CATCH-ALL with CloudFront header for HTTP
 resource "aws_lb_listener_rule" "catch_all_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 98
 
   action {
@@ -763,7 +765,7 @@ resource "aws_lb_listener_rule" "catch_all_http" {
 # Reject requests without CloudFront header - LAST PRIORITY
 resource "aws_lb_listener_rule" "reject_direct_access_http" {
   count        = var.use_cloudfront ? 1 : 0
-  listener_arn = aws_lb_listener.http.arn
+  listener_arn = aws_lb_listener.http[0].arn
   priority     = 99  # Make sure this is the last priority
 
   action {
@@ -826,4 +828,10 @@ resource "aws_appautoscaling_policy" "memory_policy" {
     scale_in_cooldown  = 60
     scale_out_cooldown = 60
   }
+}
+
+# The HTTP listener became conditional (count); keep existing CloudFront deployments' state addresses valid.
+moved {
+  from = aws_lb_listener.http
+  to   = aws_lb_listener.http[0]
 }

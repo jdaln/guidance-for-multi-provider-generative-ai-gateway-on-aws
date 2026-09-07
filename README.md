@@ -104,7 +104,7 @@ CERTIFICATE_ARN="arn:aws:acm:region:account:certificate/certificate-id"
 **Security considerations:**
 - No CloudFront layer means direct internet exposure of ALB
 - WAF protection becomes particularly important
-- ALB security group allows traffic from all IPs (0.0.0.0/0)
+- ALB security group allows traffic from all IPs (0.0.0.0/0) unless `ALB_ALLOWED_CIDRS` is set, in which case only those client ranges are accepted (enforced by the security group and by a WAF IP allow-list rule); no plaintext HTTP listener is created
 
 **Access URL:** `https://genai.example.com` (points directly to ALB)
 
@@ -143,6 +143,7 @@ CERTIFICATE_ARN="arn:aws:acm:region:account:certificate/certificate-id"
 | `USE_CLOUDFRONT` | `true` | Enables CloudFront distribution for global delivery |
 | `USE_ROUTE53` | `false` | Enables Route53 for custom domain support |
 | `PUBLIC_LOAD_BALANCER` | `true` | Deploys ALB in public subnets |
+| `ALB_ALLOWED_CIDRS` | `""` | Comma-separated client IPv4 CIDRs allowed to reach a public ALB when CloudFront is disabled (security group + WAF). Empty keeps the ALB open to any IP |
 | `CLOUDFRONT_PRICE_CLASS` | `PriceClass_100` | CloudFront price class (100/200/All) |
 | `HOSTED_ZONE_NAME` | `""` | Route53 hosted zone name for custom domain |
 | `RECORD_NAME` | `""` | Record to create in Route53 (subdomain) |
