@@ -36,6 +36,12 @@ variable "litellm_version" {
   type        = string
 }
 
+variable "litellm_log_level" {
+  description = "Value of the LITELLM_LOG environment variable passed to the LiteLLM container (DEBUG, INFO, WARNING, ERROR)."
+  type        = string
+  default     = "INFO"
+}
+
 variable "openai_api_key" {
   description = "OpenAI API key"
   type        = string

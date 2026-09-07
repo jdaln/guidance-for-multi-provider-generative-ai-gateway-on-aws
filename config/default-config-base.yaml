@@ -401,12 +401,15 @@ router_settings:
 
 environment_variables:
   STORE_MODEL_IN_DB: 'True'
-  LITELLM_LOG: "DEBUG"
+  # LITELLM_LOG is set from LITELLM_LOG_LEVEL in .env (default INFO). Uncomment to force DEBUG from the config file.
+  # LITELLM_LOG: "DEBUG"
 
 litellm_settings:
   cache: True
-  debug: True
-  detailed_debug: True
+  # debug / detailed_debug log full request and response payloads; enable only while troubleshooting
+  # (or set LITELLM_LOG_LEVEL="DEBUG" in .env)
+  # debug: True
+  # detailed_debug: True
   cache_params:
     type: redis
     host: os.environ/REDIS_HOST # Redis server hostname or IP address

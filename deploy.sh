@@ -141,6 +141,7 @@ echo "CREATE_PRIVATE_HOSTED_ZONE_IN_EXISTING_VPC: $CREATE_PRIVATE_HOSTED_ZONE_IN
 echo "OKTA_ISSUER: $OKTA_ISSUER"
 echo "OKTA_AUDIENCE: $OKTA_AUDIENCE"
 echo "LiteLLM Version: " $LITELLM_VERSION
+echo "LiteLLM log level: ${LITELLM_LOG_LEVEL:-INFO}"
 echo "Skipping container build: " $SKIP_BUILD
 echo "Build from source: " $BUILD_FROM_SOURCE
 
@@ -315,6 +316,7 @@ export TF_VAR_name=$MAIN_STACK_NAME
 export TF_VAR_vpc_id=$EXISTING_VPC_ID
 export TF_VAR_log_bucket_arn=$LOG_BUCKET_ARN
 export TF_VAR_litellm_version=$LITELLM_VERSION
+export TF_VAR_litellm_log_level=${LITELLM_LOG_LEVEL:-INFO}
 export TF_VAR_openai_api_key=$OPENAI_API_KEY
 export TF_VAR_azure_openai_api_key=$AZURE_OPENAI_API_KEY
 export TF_VAR_azure_api_key=$AZURE_API_KEY
