@@ -268,6 +268,12 @@ variable "public_load_balancer" {
   type = bool
 }
 
+variable "alb_allowed_cidrs" {
+  description = "Client IPv4 CIDR blocks allowed to reach a public ALB when CloudFront is not used (applied to the ALB security group and as a WAF IP allow-list). Empty list keeps the previous any-IP behaviour."
+  type        = list(string)
+  default     = []
+}
+
 //ECS Only Variables
 variable "cpu_target_utilization_percent" {
   description = "CPU target utilization percent for autoscale"

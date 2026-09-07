@@ -156,6 +156,13 @@ export TF_VAR_azure_openai_api_key=$AZURE_OPENAI_API_KEY
 export TF_VAR_azure_api_key=$AZURE_API_KEY
 export TF_VAR_anthropic_api_key=$ANTHROPIC_API_KEY
 export TF_VAR_public_load_balancer=$PUBLIC_LOAD_BALANCER
+ALB_ALLOWED_CIDRS_COMPACT="${ALB_ALLOWED_CIDRS:-}"
+ALB_ALLOWED_CIDRS_COMPACT="${ALB_ALLOWED_CIDRS_COMPACT// /}"
+if [ -n "$ALB_ALLOWED_CIDRS_COMPACT" ]; then
+    export TF_VAR_alb_allowed_cidrs="[\"${ALB_ALLOWED_CIDRS_COMPACT//,/\",\"}\"]"
+else
+    export TF_VAR_alb_allowed_cidrs="[]"
+fi
 export TF_VAR_existing_cluster_name=$EXISTING_EKS_CLUSTER_NAME
 export TF_VAR_groq_api_key=$GROQ_API_KEY
 export TF_VAR_cohere_api_key=$COHERE_API_KEY

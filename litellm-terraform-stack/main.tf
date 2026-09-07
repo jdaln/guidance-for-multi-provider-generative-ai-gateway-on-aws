@@ -37,6 +37,8 @@ module "base" {
   redis_node_type = var.redis_node_type
   redis_num_cache_clusters = var.redis_num_cache_clusters
   use_route53 = var.use_route53
+  # WAF IP allow-list only makes sense when clients hit the ALB directly (CloudFront would be the client)
+  waf_allowed_cidrs = var.use_cloudfront ? [] : var.alb_allowed_cidrs
 }
 
 module "ecs_cluster" {
@@ -95,6 +97,7 @@ module "ecs_cluster" {
   min_capacity = var.min_capacity
   max_capacity = var.max_capacity
   public_load_balancer = var.public_load_balancer
+  alb_allowed_cidrs = var.alb_allowed_cidrs
   master_and_salt_key_secret_arn = module.base.LitellmMasterAndSaltKeySecretArn
   main_db_secret_arn = module.base.DatabaseUrlSecretArn
   vcpus = var.vcpus

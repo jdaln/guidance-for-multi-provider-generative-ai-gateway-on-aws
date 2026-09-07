@@ -104,3 +104,9 @@ variable "rds_log_statement" {
   type        = string
   default     = "ddl"
 }
+
+variable "waf_allowed_cidrs" {
+  description = "When non-empty, the regional WAF blocks every request whose client IP is outside these IPv4 CIDR blocks (used for a public ALB without CloudFront)."
+  type        = list(string)
+  default     = []
+}
