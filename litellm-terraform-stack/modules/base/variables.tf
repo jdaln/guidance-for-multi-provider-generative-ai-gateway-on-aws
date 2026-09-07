@@ -110,3 +110,9 @@ variable "waf_allowed_cidrs" {
   type        = list(string)
   default     = []
 }
+
+variable "enable_middleware" {
+  description = "Whether the middleware image/repository is part of the deployment."
+  type        = bool
+  default     = true
+}

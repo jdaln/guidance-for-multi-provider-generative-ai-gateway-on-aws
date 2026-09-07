@@ -208,6 +208,7 @@ export TF_VAR_create_vpc_endpoints_in_existing_vpc=$CREATE_VPC_ENDPOINTS_IN_EXIS
 export TF_VAR_create_bedrock_agent_endpoint=${CREATE_BEDROCK_AGENT_ENDPOINT:-true}
 export TF_VAR_ecrLitellmRepository=$APP_NAME
 export TF_VAR_ecrMiddlewareRepository=$MIDDLEWARE_APP_NAME
+export TF_VAR_enable_middleware=${ENABLE_MIDDLEWARE:-true}
 export TF_VAR_rds_instance_class=$RDS_INSTANCE_CLASS
 export TF_VAR_rds_allocated_storage=$RDS_ALLOCATED_STORAGE_GB
 export TF_VAR_rds_backup_retention_days=${RDS_BACKUP_RETENTION_DAYS:-7}

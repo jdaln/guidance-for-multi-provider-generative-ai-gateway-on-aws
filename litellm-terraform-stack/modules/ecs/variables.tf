@@ -388,3 +388,9 @@ variable "alb_allowed_cidrs" {
     error_message = "alb_allowed_cidrs must contain IPv4 CIDR blocks such as 203.0.113.10/32."
   }
 }
+
+variable "enable_middleware" {
+  description = "Deploy the FastAPI middleware sidecar (Bedrock-format API, chat history, Okta JWT auth). When false only LiteLLM runs and every path is served by it directly."
+  type        = bool
+  default     = true
+}

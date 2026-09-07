@@ -366,6 +366,12 @@ variable "ecrMiddlewareRepository" {
   description = "Name of the Middleware ECR repository"
 }
 
+variable "enable_middleware" {
+  type        = bool
+  description = "Deploy the FastAPI middleware sidecar (ECS platform). Set to false to run LiteLLM alone; every path is then served by LiteLLM directly."
+  default     = true
+}
+
 variable "rds_instance_class" {
   type        = string
   description = "The instance class for the RDS database"
