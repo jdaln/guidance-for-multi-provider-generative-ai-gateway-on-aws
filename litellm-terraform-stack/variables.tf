@@ -278,6 +278,18 @@ variable "vcpus" {
   type = number
 }
 
+variable "memory_per_vcpu_mib" {
+  description = "ECS task memory in MiB per vCPU (2048 = historical default; LiteLLM recommends about 4096)."
+  type        = number
+  default     = 2048
+}
+
+variable "alb_idle_timeout_seconds" {
+  description = "ALB idle timeout in seconds (default 600; non-streaming LLM completions can exceed the ALB default of 60)."
+  type        = number
+  default     = 600
+}
+
 # EKS Only Variables
 variable "existing_cluster_name" {
   description = "Name of the existing EKS Cluster."

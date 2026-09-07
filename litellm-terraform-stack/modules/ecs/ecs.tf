@@ -14,7 +14,7 @@ resource "aws_ecs_task_definition" "litellm" {
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = var.vcpus * 1024
-  memory                   = var.vcpus * 1024 * 2
+  memory                   = var.vcpus * var.memory_per_vcpu_mib
   execution_role_arn       = aws_iam_role.execution_role.arn
   task_role_arn            = aws_iam_role.task_role.arn
 
@@ -39,6 +39,7 @@ resource "aws_ecs_task_definition" "litellm" {
     },
     "environment": [
       { "name": "LITELLM_LOG", "value": "DEBUG" },
+      { "name": "LITELLM_MODE", "value": "PRODUCTION" },
       { "name": "LITELLM_CONFIG_BUCKET_NAME", "value": "${var.config_bucket_name}" },
       { "name": "LITELLM_CONFIG_BUCKET_OBJECT_KEY", "value": "config.yaml" },
       { "name": "UI_USERNAME", "value": "admin" },
@@ -169,8 +170,12 @@ resource "aws_ecs_task_definition" "litellm" {
     "healthCheck": {
       "command": [
         "CMD-SHELL",
-        "exit 0"
-      ]
+        "python -c \"import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://localhost:4000/health/liveliness', timeout=5).status == 200 else 1)\""
+      ],
+      "interval": 30,
+      "timeout": 5,
+      "retries": 3,
+      "startPeriod": 180
     }
   },
   {
