@@ -130,8 +130,14 @@ if [ "$USE_ROUTE53" = "true" ]; then
     fi
     
     if [ -z "$CERTIFICATE_ARN" ]; then
-        echo "Warning: No CERTIFICATE_ARN provided. Using CloudFront-to-ALB HTTP communication with header authentication."
-        echo "Note: Communication between users and CloudFront will still use HTTPS."
+        if [ "$USE_CLOUDFRONT" = "true" ]; then
+            echo "Warning: No CERTIFICATE_ARN provided. Using CloudFront-to-ALB HTTP communication with header authentication."
+            echo "Note: Communication between users and CloudFront will still use HTTPS."
+        elif [ "${PUBLIC_LOAD_BALANCER:-true}" = "true" ]; then
+            echo "No CERTIFICATE_ARN provided: an ACM certificate for ${RECORD_NAME}.${HOSTED_ZONE_NAME} will be requested and DNS-validated in the hosted zone automatically."
+        else
+            echo "Warning: No CERTIFICATE_ARN provided for a private load balancer: a self-signed certificate will be used."
+        fi
     fi
 else
     if [ -n "$HOSTED_ZONE_NAME" ] || [ -n "$RECORD_NAME" ]; then

@@ -40,8 +40,8 @@ resource "aws_lb_listener" "https" {
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
   
-  # Use ACM certificate if provided, otherwise use self-signed certificate
-  certificate_arn   = var.certificate_arn != "" ? var.certificate_arn : aws_acm_certificate.self_signed[0].arn
+  # Provided ACM certificate, else an automatically requested one (Route53 + public ALB, no CloudFront), else self-signed
+  certificate_arn   = local.alb_certificate_arn
 
   # Instead of a fixed-response 404, use tg_4000 as the default.
   default_action {
@@ -52,13 +52,13 @@ resource "aws_lb_listener" "https" {
 
 # Create a self-signed certificate if no certificate ARN is provided
 resource "tls_private_key" "self_signed" {
-  count     = var.certificate_arn == "" ? 1 : 0
+  count     = local.use_self_signed_certificate ? 1 : 0
   algorithm = "RSA"
   rsa_bits  = 2048
 }
 
 resource "tls_self_signed_cert" "self_signed" {
-  count           = var.certificate_arn == "" ? 1 : 0
+  count           = local.use_self_signed_certificate ? 1 : 0
   private_key_pem = tls_private_key.self_signed[0].private_key_pem
 
   subject {
@@ -76,7 +76,7 @@ resource "tls_self_signed_cert" "self_signed" {
 }
 
 resource "aws_acm_certificate" "self_signed" {
-  count            = var.certificate_arn == "" ? 1 : 0
+  count            = local.use_self_signed_certificate ? 1 : 0
   private_key      = tls_private_key.self_signed[0].private_key_pem
   certificate_body = tls_self_signed_cert.self_signed[0].cert_pem
 
