@@ -119,7 +119,7 @@ aws bedrock create-guardrail-version --region eu-north-1 --guardrail-identifier 
 
 Put `<guardrailId>` in `BEDROCK_GUARDRAIL_ID` and the returned version (usually `1`) in
 `BEDROCK_GUARDRAIL_VERSION`. Medium strength on HATE/INSULTS/VIOLENCE/MISCONDUCT keeps false
-positives low for clinical text; raise later from the console if needed (create a new version and
+positives low for domain-specific text; raise later from the console if needed (create a new version and
 update `.env`).
 
 ## 3. Deploy
