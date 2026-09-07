@@ -1,4 +1,7 @@
-litellm==1.83.7
+litellm==1.100.0
+openai
+click
+tqdm
 tabulate
 termcolor
 python-dotenv

@@ -80,6 +80,21 @@ esac
 echo $DOCKER_ARCH
 
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+# Optionally verify the cosign signature of the upstream image before building on top of it.
+# Enable with VERIFY_LITELLM_IMAGE_SIGNATURE="true" in .env (requires cosign: https://docs.sigstore.dev/cosign/system_config/installation/).
+# The public key is pinned to the commit that introduced it in the LiteLLM repository.
+if [ "${VERIFY_LITELLM_IMAGE_SIGNATURE:-false}" = "true" ] && [ "$BUILD_FROM_SOURCE" != "true" ]; then
+    if ! command -v cosign &> /dev/null; then
+        echo "Error: VERIFY_LITELLM_IMAGE_SIGNATURE=true but cosign is not installed"
+        exit 1
+    fi
+    echo "Verifying cosign signature of ghcr.io/berriai/litellm:${LITELLM_VERSION}..."
+    cosign verify \
+        --key https://raw.githubusercontent.com/BerriAI/litellm/0112e53046018d726492c814b3644b7d376029d0/cosign.pub \
+        "ghcr.io/berriai/litellm:${LITELLM_VERSION}" > /dev/null
+    echo "Signature verified."
+fi
 docker build --platform $DOCKER_ARCH --build-arg LITELLM_VERSION=${LITELLM_VERSION} -t $APP_NAME\:${LITELLM_VERSION} .
 echo "Tagging image with ${APP_NAME}:${LITELLM_VERSION}"
 docker tag $APP_NAME\:${LITELLM_VERSION} $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$APP_NAME\:${LITELLM_VERSION}
