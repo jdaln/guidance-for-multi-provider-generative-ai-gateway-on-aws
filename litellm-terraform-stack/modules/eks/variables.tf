@@ -363,3 +363,13 @@ variable "langfuse_host" {
   type    = string
   description = "the hostname of your langfuse deployment."
 }
+
+variable "litellm_log_level" {
+  description = "Value of the LITELLM_LOG environment variable (DEBUG logs full request and response payloads)."
+  type        = string
+  default     = "INFO"
+  validation {
+    condition     = contains(["DEBUG", "INFO", "WARNING", "ERROR"], var.litellm_log_level)
+    error_message = "litellm_log_level must be one of DEBUG, INFO, WARNING, ERROR."
+  }
+}

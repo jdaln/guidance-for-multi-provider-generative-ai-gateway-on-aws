@@ -163,7 +163,7 @@ resource "kubernetes_deployment" "litellm" {
 
           env {
             name = "LITELLM_LOG"
-            value = "DEBUG"
+            value = var.litellm_log_level
           }
 
           env {
