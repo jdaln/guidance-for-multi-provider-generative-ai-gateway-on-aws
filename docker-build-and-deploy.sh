@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 if [ $# -ne 3 ]; then
   echo "Usage: $0 <APP_NAME> <BUILD_FROM_SOURCE> <ARCH>"
@@ -40,7 +41,7 @@ AWS_REGION=$(aws ec2 describe-availability-zones --output text --query 'Availabi
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 
 # Check if the repository already exists
-REPO_EXISTS=$(aws ecr describe-repositories --repository-names $APP_NAME 2>/dev/null)
+REPO_EXISTS=$(aws ecr describe-repositories --repository-names "$APP_NAME" 2>/dev/null || true)
 
 if [ -z "$REPO_EXISTS" ]; then
     # Repository does not exist, create it with tag
