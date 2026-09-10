@@ -39,10 +39,22 @@ first run.
 Log in to the console as root **only** for steps 1.1 and 1.2, then log out. Everything else uses
 the deployer user.
 
-### 1.1 Register the domain (console)
+### 1.1 Give the gateway a DNS zone in this account
 
-Route53 > Registered domains > Register domain. Registration creates the public hosted zone
-automatically. Note the zone name; it becomes `HOSTED_ZONE_NAME`.
+Either register a new domain (Route53 > Registered domains > Register domain; the public hosted zone
+is created automatically), or delegate a subdomain of a domain you already control:
+
+```bash
+aws route53 create-hosted-zone --name <sub.example.org> --caller-reference gateway-zone-1 \
+  --query 'DelegationSet.NameServers' --output text
+```
+
+The command prints **four name servers specific to your zone** (pattern
+`ns-<number>.awsdns-<number>.<tld>`; do not copy values from any documentation, only from this
+output). At the DNS provider of the parent domain, create four `NS` records named `<sub>` (TTL
+3600), one per name server. Nothing else in the parent domain is affected. Verify after a few
+minutes with `dig +short NS <sub.example.org>`; the four names must come back. The zone name becomes
+`HOSTED_ZONE_NAME`; the gateway will live at `<RECORD_NAME>.<HOSTED_ZONE_NAME>`.
 
 ### 1.2 Create the deployer user (console or CLI)
 
