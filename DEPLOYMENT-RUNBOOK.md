@@ -203,7 +203,11 @@ export GATEWAY_URL="https://gateway.<your-domain>"
 curl -sS "$GATEWAY_URL/health/readiness"      # expect "status":"connected" for the db
 ```
 
-Retrieve the master key and the Admin UI password (never paste them into chat or commits):
+Retrieve the master key and the Admin UI password (never paste them into chat or commits). Both live
+in AWS Secrets Manager, Region eu-north-1, in the secret whose name starts with `LiteLLMMasterSalt-`
+(random suffix). It is a JSON with three keys: `LITELLM_MASTER_KEY` (API master key, used by the key
+creation script), `UI_PASSWORD` (Admin UI login, user `admin`) and `LITELLM_SALT_KEY` (internal,
+never change it). Console path: Secrets Manager > that secret > "Retrieve secret value". CLI:
 
 ```bash
 SECRET_ARN=$(aws secretsmanager list-secrets --region eu-north-1 \
@@ -237,7 +241,9 @@ curl -sS "$GATEWAY_URL/spend/logs?api_key=$KEY" -H "Authorization: Bearer $LITEL
 # From a machine outside ALB_ALLOWED_CIDRS the connection must time out (security group drops it)
 ```
 
-Admin UI: `https://gateway.<your-domain>/ui`, user `admin`, password `UI_PASSWORD` from above.
+Admin UI: `https://gateway.<your-domain>/ui/` (keep the trailing slash: the bare `/ui` redirect
+currently points at http and fails behind the HTTPS-only load balancer), user `admin`, password
+`UI_PASSWORD` from above.
 Use it to watch spend per key; create keys with the script so they get the three windows.
 
 ## 5. Everyday operations
