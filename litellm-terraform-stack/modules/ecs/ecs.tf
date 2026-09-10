@@ -42,6 +42,7 @@ resource "aws_ecs_task_definition" "litellm" {
       { "name": "LITELLM_MODE", "value": "PRODUCTION" },
       { "name": "LITELLM_CONFIG_BUCKET_NAME", "value": "${var.config_bucket_name}" },
       { "name": "LITELLM_CONFIG_BUCKET_OBJECT_KEY", "value": "config.yaml" },
+      { "name": "LITELLM_CONFIG_VERSION", "value": "${var.config_object_etag}" },
       { "name": "UI_USERNAME", "value": "admin" },
       { "name": "REDIS_HOST", "value": "${var.redis_host}" },
       { "name": "REDIS_PORT", "value": "${var.redis_port}" },
