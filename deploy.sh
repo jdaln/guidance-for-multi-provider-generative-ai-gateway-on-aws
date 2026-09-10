@@ -47,15 +47,23 @@ if [ ! -f ".env" ]; then
 fi
 
 SKIP_BUILD=false
+PLAN_ONLY=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         --skip-build)
             SKIP_BUILD=true
             shift
             ;;
+        --plan-only)
+            # Show what Terraform would do without building images or applying anything
+            # (the Terraform state bucket is still created because the backend needs it).
+            PLAN_ONLY=true
+            SKIP_BUILD=true
+            shift
+            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--skip-build]"
+            echo "Usage: $0 [--skip-build] [--plan-only]"
             exit 1
             ;;
     esac
@@ -231,9 +239,11 @@ else
     echo "Skipping docker build and deploy step..."
 fi
 
-cd middleware
-./docker-build-and-deploy.sh $MIDDLEWARE_APP_NAME $ARCH
-cd ..
+if [ "$PLAN_ONLY" = false ]; then
+    cd middleware
+    ./docker-build-and-deploy.sh $MIDDLEWARE_APP_NAME $ARCH
+    cd ..
+fi
 
 echo "Deploying the log bucket terraform stack..."
 cd litellm-s3-log-bucket-terraform
@@ -249,12 +259,19 @@ EOF
 echo "Generated backend.hcl configuration"
 
 terraform init -backend-config=backend.hcl
+if [ "$PLAN_ONLY" = true ]; then
+    terraform plan
+    # Outputs only exist once the stack has been applied; use placeholders for the main-stack plan otherwise
+    LOG_BUCKET_NAME=$(terraform output -raw LogBucketName 2>/dev/null || echo "placeholder-log-bucket")
+    LOG_BUCKET_ARN=$(terraform output -raw LogBucketArn 2>/dev/null || echo "arn:aws:s3:::placeholder-log-bucket")
+else
 terraform apply -auto-approve
+fi
 
 if [ $? -eq 0 ]; then
     echo "Log Bucket Deployment successful. Extracting outputs..."
-    LOG_BUCKET_NAME=$(terraform output -raw LogBucketName)
-    LOG_BUCKET_ARN=$(terraform output -raw LogBucketArn)
+    LOG_BUCKET_NAME=$(terraform output -raw LogBucketName 2>/dev/null || echo "$LOG_BUCKET_NAME")
+    LOG_BUCKET_ARN=$(terraform output -raw LogBucketArn 2>/dev/null || echo "$LOG_BUCKET_ARN")
 
     CONFIG_PATH="../config/config.yaml"
 
@@ -398,6 +415,11 @@ EOF
 echo "Generated backend.hcl configuration"
 
 terraform init -backend-config=backend.hcl
+if [ "$PLAN_ONLY" = true ]; then
+    echo "Plan only: showing the changes the main stack would apply, then exiting."
+    terraform plan
+    exit 0
+fi
 if [ -z "$EXISTING_VPC_ID" ] && [ "$DEPLOYMENT_PLATFORM" = "EKS" ]; then
     echo "Deploying base of terraform first for case of new vpc and eks"
     terraform apply -target=module.base -auto-approve
