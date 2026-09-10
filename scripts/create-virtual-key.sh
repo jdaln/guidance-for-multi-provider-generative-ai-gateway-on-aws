@@ -13,7 +13,7 @@
 set -euo pipefail
 
 ALIAS="${1:?usage: $0 <key-alias> [models]}"
-MODELS="${2:-claude-opus-5-eu,claude-sonnet-5-eu,claude-haiku-4-5-eu,claude-fable-5-global,claude-fable-5-1-global,gpt-5.6-sol-global,gpt-5.6-terra-global,gpt-6-astra-global}"
+MODELS="${2:-claude-opus-4-6-eu,claude-opus-5-eu,claude-sonnet-5-eu,claude-haiku-4-5-eu,claude-fable-5-global,claude-fable-5-1-global,gpt-5.6-sol-global,gpt-5.6-terra-global,gpt-6-astra-global}"
 : "${GATEWAY_URL:?set GATEWAY_URL}"
 : "${LITELLM_MASTER_KEY:?set LITELLM_MASTER_KEY}"
 BUDGET_6H="${BUDGET_6H:-30}"

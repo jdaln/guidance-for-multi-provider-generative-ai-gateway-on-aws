@@ -26,6 +26,9 @@ model_list:
   - model_name: claude-opus-5-eu
     litellm_params:
       model: bedrock/eu.anthropic.claude-opus-5
+  - model_name: claude-opus-4-6-eu
+    litellm_params:
+      model: bedrock/eu.anthropic.claude-opus-4-6-v1
   - model_name: claude-sonnet-5-eu
     litellm_params:
       model: bedrock/eu.anthropic.claude-sonnet-5

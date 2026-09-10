@@ -6,7 +6,7 @@ This branch (`deploy/eu-north-1`) deploys the upstream guidance with the changes
 - LiteLLM `v1.100.0` alone (middleware sidecar disabled), Bedrock as the only provider.
 - Public ALB reachable **only** from the IP ranges in `ALB_ALLOWED_CIDRS` (security group and a
   WAF IP allow-list), HTTPS only, ACM certificate on `gateway.<your-domain>` requested automatically.
-- Models: Claude Opus 5 / Sonnet 5 / Haiku 4.5 through the **EU** geo profile (data stays in EU
+- Models: Claude Opus 4.6 / Opus 5 / Sonnet 5 / Haiku 4.5 through the **EU** geo profile (data stays in EU
   Regions); Claude Fable 5 / 5.1 and GPT-5.6 Sol / Terra through **global** profiles (data may be
   processed outside the EU, names carry a `-global` suffix); GPT-6 Astra as experimental.
 - One Bedrock Guardrail (prompt-attack and harmful-content filters, EU guardrail profile) enforced
