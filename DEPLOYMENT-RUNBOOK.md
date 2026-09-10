@@ -11,7 +11,7 @@ This branch (`deploy/eu-north-1`) deploys the upstream guidance with the changes
   processed outside the EU, names carry a `-global` suffix); GPT-6 Astra as experimental.
 - One Bedrock Guardrail (prompt-attack and harmful-content filters, EU guardrail profile) enforced
   on the input and the output of every request.
-- Per-key spend windows 6h / 24h / 7d ($30 / $75 / $300 by default) plus a $5,000 / 30 days ceiling
+- Per-key spend windows 6h / 24h / 7d ($30 / $75 / $300 by default) plus a $3,000 / 30 days ceiling
   for the whole proxy.
 - Full request/response audit trail in the encrypted S3 log bucket; Postgres 17 with 7-day backups
   and deletion protection; Admin UI kept (own password), Swagger disabled.
