@@ -7,9 +7,11 @@ echo $aws_region
 APP_NAME=fakeserver
 
 source .env
+# Terraform-compatible binary to use ("terraform" or "tofu" for OpenTofu)
+TERRAFORM_BIN="${TERRAFORM_BIN:-terraform}"
 
 cd litellm-terraform-stack
-VPC_ID=$(terraform output -raw vpc_id)
+VPC_ID=$("$TERRAFORM_BIN" output -raw vpc_id)
 cd ..
 
 cd litellm-fake-llm-load-testing-server-terraform
@@ -62,7 +64,7 @@ encrypt = true
 EOF
 echo "Generated backend.hcl configuration"
 
-terraform init -backend-config=backend.hcl -reconfigure
-terraform destroy -auto-approve
+"$TERRAFORM_BIN" init -backend-config=backend.hcl -reconfigure
+"$TERRAFORM_BIN" destroy -auto-approve
 
 echo "destroyed"

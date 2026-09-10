@@ -145,6 +145,7 @@ CERTIFICATE_ARN="arn:aws:acm:region:account:certificate/certificate-id"
 | `PUBLIC_LOAD_BALANCER` | `true` | Deploys ALB in public subnets |
 | `ALB_ALLOWED_CIDRS` | `""` | Comma-separated client IPv4 CIDRs allowed to reach a public ALB when CloudFront is disabled (security group + WAF). Empty keeps the ALB open to any IP |
 | `CLOUDFRONT_PRICE_CLASS` | `PriceClass_100` | CloudFront price class (100/200/All) |
+| `TERRAFORM_BIN` | `terraform` | Terraform-compatible binary used by the scripts; set to `tofu` for OpenTofu |
 | `HOSTED_ZONE_NAME` | `""` | Route53 hosted zone name for custom domain |
 | `RECORD_NAME` | `""` | Record to create in Route53 (subdomain) |
 | `CERTIFICATE_ARN` | `""` | ARN of ACM certificate for custom domain. With `USE_ROUTE53=true`, `USE_CLOUDFRONT=false` and a public ALB it can be left empty: a certificate is requested and DNS-validated in the hosted zone automatically |

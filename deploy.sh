@@ -68,6 +68,8 @@ MAIN_STACK_NAME="litellm-stack"
 TRACKING_STACK_NAME="tracking-stack"
 # Load environment variables from .env file
 source .env
+# Terraform-compatible binary to use ("terraform" or "tofu" for OpenTofu)
+TERRAFORM_BIN="${TERRAFORM_BIN:-terraform}"
 
 # Auto-detect existing deployments and set defaults for backward compatibility
 if aws cloudformation describe-stacks --stack-name "${TRACKING_STACK_NAME}" &>/dev/null; then
@@ -279,13 +281,13 @@ encrypt = true
 EOF
 echo "Generated backend.hcl configuration"
 
-terraform init -backend-config=backend.hcl
-terraform apply -auto-approve
+"$TERRAFORM_BIN" init -backend-config=backend.hcl
+"$TERRAFORM_BIN" apply -auto-approve
 
 if [ $? -eq 0 ]; then
     echo "Log Bucket Deployment successful. Extracting outputs..."
-    LOG_BUCKET_NAME=$(terraform output -raw LogBucketName)
-    LOG_BUCKET_ARN=$(terraform output -raw LogBucketArn)
+    LOG_BUCKET_NAME=$("$TERRAFORM_BIN" output -raw LogBucketName)
+    LOG_BUCKET_ARN=$("$TERRAFORM_BIN" output -raw LogBucketArn)
 
     CONFIG_PATH="../config/config.yaml"
 
@@ -457,20 +459,20 @@ encrypt = true
 EOF
 echo "Generated backend.hcl configuration"
 
-terraform init -backend-config=backend.hcl
+"$TERRAFORM_BIN" init -backend-config=backend.hcl
 if [ -z "$EXISTING_VPC_ID" ] && [ "$DEPLOYMENT_PLATFORM" = "EKS" ]; then
     echo "Deploying base of terraform first for case of new vpc and eks"
-    terraform apply -target=module.base -auto-approve
+    "$TERRAFORM_BIN" apply -target=module.base -auto-approve
 fi
-terraform apply -auto-approve
+"$TERRAFORM_BIN" apply -auto-approve
 
 if [ $? -eq 0 ]; then
     echo "Deployment successful. Extracting outputs..."
     
     if [ "$DEPLOYMENT_PLATFORM" = "ECS" ]; then
-        LITELLM_ECS_CLUSTER=$(terraform output -raw LitellmEcsCluster)
-        LITELLM_ECS_TASK=$(terraform output -raw LitellmEcsTask)
-        SERVICE_URL=$(terraform output -raw ServiceURL)
+        LITELLM_ECS_CLUSTER=$("$TERRAFORM_BIN" output -raw LitellmEcsCluster)
+        LITELLM_ECS_TASK=$("$TERRAFORM_BIN" output -raw LitellmEcsTask)
+        SERVICE_URL=$("$TERRAFORM_BIN" output -raw ServiceURL)
 
         echo "ServiceURL=$SERVICE_URL" > resources.txt
         aws ecs update-service \
@@ -482,8 +484,8 @@ if [ $? -eq 0 ]; then
     fi
 
     if [ "$DEPLOYMENT_PLATFORM" = "EKS" ]; then
-        EKS_CLUSTER_NAME=$(terraform output -raw eks_cluster_name)
-        EKS_DEPLOYMENT_NAME=$(terraform output -raw eks_deployment_name)
+        EKS_CLUSTER_NAME=$("$TERRAFORM_BIN" output -raw eks_cluster_name)
+        EKS_DEPLOYMENT_NAME=$("$TERRAFORM_BIN" output -raw eks_deployment_name)
 
         echo "EKS_DEPLOYMENT_NAME: $EKS_DEPLOYMENT_NAME"
         echo "EKS_CLUSTER_NAME: $EKS_CLUSTER_NAME"
@@ -494,10 +496,10 @@ if [ $? -eq 0 ]; then
     # Validate CloudFront if enabled
     if [ "$USE_CLOUDFRONT" = "true" ]; then
         echo "Validating CloudFront deployment..."
-        CF_DIST_ID=$(terraform output -raw cloudfront_distribution_id 2>/dev/null || echo "")
+        CF_DIST_ID=$("$TERRAFORM_BIN" output -raw cloudfront_distribution_id 2>/dev/null || echo "")
         if [ -n "$CF_DIST_ID" ]; then
             echo "✓ CloudFront distribution created successfully: $CF_DIST_ID"
-            CF_DOMAIN=$(terraform output -raw cloudfront_domain_name 2>/dev/null || echo "")
+            CF_DOMAIN=$("$TERRAFORM_BIN" output -raw cloudfront_domain_name 2>/dev/null || echo "")
             echo "✓ CloudFront domain: $CF_DOMAIN"
             echo "CloudFrontDomain=$CF_DOMAIN" >> resources.txt
             echo "CloudFrontID=$CF_DIST_ID" >> resources.txt

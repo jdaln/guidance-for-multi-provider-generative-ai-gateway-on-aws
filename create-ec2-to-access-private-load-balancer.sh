@@ -6,6 +6,8 @@ echo $aws_region
 
 # Load environment variables from .env file
 source .env
+# Terraform-compatible binary to use ("terraform" or "tofu" for OpenTofu)
+TERRAFORM_BIN="${TERRAFORM_BIN:-terraform}"
 
 echo "EC2_KEY_PAIR_NAME: $EC2_KEY_PAIR_NAME" 
 
@@ -19,7 +21,7 @@ else
 fi
 
 cd litellm-terraform-stack
-VPC_ID=$(terraform output -raw vpc_id)
+VPC_ID=$("$TERRAFORM_BIN" output -raw vpc_id)
 cd ..
 
 cd litellm-private-load-balancer-ec2-terraform
@@ -34,10 +36,10 @@ encrypt = true
 EOF
 echo "Generated backend.hcl configuration"
 
-terraform init -backend-config=backend.hcl
+"$TERRAFORM_BIN" init -backend-config=backend.hcl
 
 export TF_VAR_vpc_id=$VPC_ID
 export TF_VAR_key_pair_name=$EC2_KEY_PAIR_NAME
 
-terraform apply -auto-approve
+"$TERRAFORM_BIN" apply -auto-approve
 echo "deployed"

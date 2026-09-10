@@ -22,6 +22,8 @@ MAIN_STACK_NAME="litellm-stack"
 
 # Load environment variables from .env file
 source .env
+# Terraform-compatible binary to use ("terraform" or "tofu" for OpenTofu)
+TERRAFORM_BIN="${TERRAFORM_BIN:-terraform}"
 
 if [[ (-z "$LITELLM_VERSION") || ("$LITELLM_VERSION" == "placeholder") ]]; then
     echo "LITELLM_VERSION must be set in .env file"
@@ -123,8 +125,8 @@ fi
 echo $ARCH
 
 cd litellm-s3-log-bucket-terraform
-LOG_BUCKET_NAME=$(terraform output -raw LogBucketName)
-LOG_BUCKET_ARN=$(terraform output -raw LogBucketArn)
+LOG_BUCKET_NAME=$("$TERRAFORM_BIN" output -raw LogBucketName)
+LOG_BUCKET_ARN=$("$TERRAFORM_BIN" output -raw LogBucketArn)
 
 CONFIG_PATH="../config/config.yaml"
 
@@ -242,8 +244,8 @@ encrypt = true
 EOF
 echo "Generated backend.hcl configuration"
 
-terraform init -backend-config=backend.hcl
-terraform destroy -auto-approve
+"$TERRAFORM_BIN" init -backend-config=backend.hcl
+"$TERRAFORM_BIN" destroy -auto-approve
 
 if [ $? -eq 0 ]; then
     echo "Undeployment successful"
@@ -263,8 +265,8 @@ encrypt = true
 EOF
 echo "Generated backend.hcl configuration"
 
-terraform init -backend-config=backend.hcl
-terraform destroy -auto-approve
+"$TERRAFORM_BIN" init -backend-config=backend.hcl
+"$TERRAFORM_BIN" destroy -auto-approve
 
 if [ $? -eq 0 ]; then
     echo "Undeployment successful"

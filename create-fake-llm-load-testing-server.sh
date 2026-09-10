@@ -7,9 +7,11 @@ echo $aws_region
 APP_NAME=fakeserver
 
 source .env
+# Terraform-compatible binary to use ("terraform" or "tofu" for OpenTofu)
+TERRAFORM_BIN="${TERRAFORM_BIN:-terraform}"
 
 cd litellm-terraform-stack
-VPC_ID=$(terraform output -raw vpc_id)
+VPC_ID=$("$TERRAFORM_BIN" output -raw vpc_id)
 cd ..
 
 cd litellm-fake-llm-load-testing-server-terraform
@@ -67,14 +69,14 @@ encrypt = true
 EOF
 echo "Generated backend.hcl configuration"
 
-terraform init -backend-config=backend.hcl -reconfigure
-terraform apply -auto-approve
+"$TERRAFORM_BIN" init -backend-config=backend.hcl -reconfigure
+"$TERRAFORM_BIN" apply -auto-approve
 
 echo "deployed"
 
 if [ $? -eq 0 ]; then
-    LITELLM_ECS_CLUSTER=$(terraform output -raw fake_server_ecs_cluster)
-    LITELLM_ECS_TASK=$(terraform output -raw fake_server_ecs_task)
+    LITELLM_ECS_CLUSTER=$("$TERRAFORM_BIN" output -raw fake_server_ecs_cluster)
+    LITELLM_ECS_TASK=$("$TERRAFORM_BIN" output -raw fake_server_ecs_task)
 
     aws ecs update-service \
         --cluster $LITELLM_ECS_CLUSTER \
