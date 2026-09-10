@@ -47,15 +47,23 @@ if [ ! -f ".env" ]; then
 fi
 
 SKIP_BUILD=false
+PLAN_ONLY=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         --skip-build)
             SKIP_BUILD=true
             shift
             ;;
+        --plan-only)
+            # Show what Terraform would do without building images or applying anything
+            # (the Terraform state bucket is still created because the backend needs it).
+            PLAN_ONLY=true
+            SKIP_BUILD=true
+            shift
+            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--skip-build]"
+            echo "Usage: $0 [--skip-build] [--plan-only]"
             exit 1
             ;;
     esac
@@ -264,10 +272,12 @@ if [ "$ENABLE_MIDDLEWARE" = "false" ] && [ "$DEPLOYMENT_PLATFORM" != "ECS" ]; th
     echo "Error: ENABLE_MIDDLEWARE=false is only supported with DEPLOYMENT_PLATFORM=ECS"
     exit 1
 fi
-if [ "$ENABLE_MIDDLEWARE" = "true" ]; then
+if [ "$ENABLE_MIDDLEWARE" = "true" ] && [ "$PLAN_ONLY" = false ]; then
     cd middleware
     ./docker-build-and-deploy.sh $MIDDLEWARE_APP_NAME $ARCH
     cd ..
+elif [ "$ENABLE_MIDDLEWARE" = "true" ]; then
+    echo "Plan only: skipping the middleware image build."
 else
     echo "Middleware disabled (ENABLE_MIDDLEWARE=false): skipping middleware image build; LiteLLM serves every path directly."
 fi
@@ -286,12 +296,19 @@ EOF
 echo "Generated backend.hcl configuration"
 
 "$TERRAFORM_BIN" init -backend-config=backend.hcl
+if [ "$PLAN_ONLY" = true ]; then
+    "$TERRAFORM_BIN" plan
+    # Outputs only exist once the stack has been applied; use placeholders for the main-stack plan otherwise
+    LOG_BUCKET_NAME=$("$TERRAFORM_BIN" output -raw LogBucketName 2>/dev/null || echo "placeholder-log-bucket")
+    LOG_BUCKET_ARN=$("$TERRAFORM_BIN" output -raw LogBucketArn 2>/dev/null || echo "arn:aws:s3:::placeholder-log-bucket")
+else
 "$TERRAFORM_BIN" apply -auto-approve
+fi
 
 if [ $? -eq 0 ]; then
     echo "Log Bucket Deployment successful. Extracting outputs..."
-    LOG_BUCKET_NAME=$("$TERRAFORM_BIN" output -raw LogBucketName)
-    LOG_BUCKET_ARN=$("$TERRAFORM_BIN" output -raw LogBucketArn)
+    LOG_BUCKET_NAME=$("$TERRAFORM_BIN" output -raw LogBucketName 2>/dev/null || echo "${LOG_BUCKET_NAME:-}")
+    LOG_BUCKET_ARN=$("$TERRAFORM_BIN" output -raw LogBucketArn 2>/dev/null || echo "${LOG_BUCKET_ARN:-}")
 
     CONFIG_PATH="../config/config.yaml"
 
@@ -464,6 +481,11 @@ EOF
 echo "Generated backend.hcl configuration"
 
 "$TERRAFORM_BIN" init -backend-config=backend.hcl
+if [ "$PLAN_ONLY" = true ]; then
+    echo "Plan only: showing the changes the main stack would apply, then exiting."
+    "$TERRAFORM_BIN" plan
+    exit 0
+fi
 if [ -z "$EXISTING_VPC_ID" ] && [ "$DEPLOYMENT_PLATFORM" = "EKS" ]; then
     echo "Deploying base of terraform first for case of new vpc and eks"
     "$TERRAFORM_BIN" apply -target=module.base -auto-approve
