@@ -325,6 +325,20 @@ if [ -n "${LANGFUSE_PUBLIC_KEY}" ] && [ -n "${LANGFUSE_SECRET_KEY}" ]; then
 fi
 
 echo "Deploying litellm-terraform-stack"
+
+# The main stack reads the ECR repositories through data sources, but they are only created by the
+# image build. Make sure they exist so --plan-only and --skip-build also work on a fresh account.
+ensure_ecr_repository() {
+    if ! aws ecr describe-repositories --repository-names "$1" >/dev/null 2>&1; then
+        echo "Creating ECR repository $1 (stays empty until an image is pushed)..."
+        aws ecr create-repository --repository-name "$1" --tags Key=project,Value=llmgateway >/dev/null
+    fi
+}
+ensure_ecr_repository "$APP_NAME"
+if [ "${ENABLE_MIDDLEWARE:-true}" = "true" ]; then
+    ensure_ecr_repository "$MIDDLEWARE_APP_NAME"
+fi
+
 cd litellm-terraform-stack
 
 export TF_VAR_deployment_platform=$DEPLOYMENT_PLATFORM
