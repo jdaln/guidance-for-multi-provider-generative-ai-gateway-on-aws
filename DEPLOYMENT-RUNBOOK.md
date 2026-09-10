@@ -87,15 +87,38 @@ aws sts get-caller-identity   # must show arn:aws:iam::<account>:user/gateway-de
 
 Enable MFA on the root account if it is not already, and do not create root access keys.
 
-## 2. Bedrock prerequisites (deployer user)
+## 2. Bedrock prerequisites
 
-### 2.1 Model access
+### 2.1 Model access (root, or an admin with AWS Marketplace permissions)
 
-Bedrock console (eu-north-1) > Model access > request access to: Anthropic Claude Opus 5, Claude
-Sonnet 5, Claude Haiku 4.5, Claude Fable 5, Claude Fable 5.1; OpenAI GPT-5.6 Sol, GPT-5.6 Terra
-(and GPT-6 Astra if listed). Anthropic and OpenAI models are AWS Marketplace listings; accept the
-terms once. If a model later answers "model is not available for this account", repeat the request
-in `us-east-1` (destination Region of the global profiles).
+Bedrock enables a model automatically on its first invocation, but here that first call would come
+from the gateway's task role, which deliberately has no AWS Marketplace permissions. Create the model
+agreements once beforehand. Anthropic additionally requires its one-time use-case form (Bedrock
+console, open any Anthropic model, "Submit use case details"); `AUTHORIZED` in the second column of
+the check below means it is accepted.
+
+```bash
+MODELS="anthropic.claude-opus-4-6-v1 anthropic.claude-opus-5 anthropic.claude-sonnet-5 anthropic.claude-haiku-4-5-20251001-v1:0 anthropic.claude-fable-5 anthropic.claude-fable-5-1 openai.gpt-5.6-sol openai.gpt-5.6-terra openai.gpt-6-astra"
+for m in $MODELS; do
+  token=$(aws bedrock list-foundation-model-agreement-offers --model-id "$m" --region eu-north-1 --query 'offers[0].offerToken' --output text 2>/dev/null)
+  if [ -n "$token" ] && [ "$token" != "None" ]; then
+    aws bedrock create-foundation-model-agreement --model-id "$m" --offer-token "$token" --region eu-north-1 >/dev/null && echo "$m: agreement created"
+  else
+    echo "$m: no offer found in eu-north-1"
+  fi
+done
+```
+
+A few minutes later every line of this check should start with `AVAILABLE`:
+
+```bash
+for m in $MODELS; do printf '%s: ' "$m"; aws bedrock get-foundation-model-availability --model-id "$m" --region eu-north-1 \
+  --query '[agreementAvailability.status,authorizationStatus,entitlementAvailability,regionAvailability]' --output text | tr '\n' ' '; echo; done
+```
+
+Models served only through a global profile (GPT-5.6, Fable) are not listed in the Stockholm model
+catalog in the console; the CLI handles them. Service Quotas requests are not needed for access, they
+only raise tokens-per-minute limits.
 
 ### 2.2 Data retention mode required by Claude Fable
 
