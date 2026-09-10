@@ -10,6 +10,9 @@
 #   ./scripts/create-virtual-key.sh <key-alias> [comma-separated model names]
 #
 # Optional overrides (USD): BUDGET_6H (30), BUDGET_24H (75), BUDGET_7D (300)
+#
+# The Admin UI only displays the legacy single budget (max_budget / budget_duration), not budget_limits,
+# so the weekly cap is set in both places: the UI shows "$300 / 7d" while all three windows are enforced.
 set -euo pipefail
 
 ALIAS="${1:?usage: $0 <key-alias> [models]}"
@@ -26,6 +29,8 @@ BODY=$(cat <<JSON
 {
   "key_alias": "${ALIAS}",
   "models": [${MODELS_JSON}],
+  "max_budget": ${BUDGET_7D},
+  "budget_duration": "7d",
   "budget_limits": [
     {"budget_duration": "6h",  "max_budget": ${BUDGET_6H}},
     {"budget_duration": "24h", "max_budget": ${BUDGET_24H}},
