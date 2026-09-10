@@ -17,7 +17,11 @@ if aws s3api head-bucket --bucket "$TERRAFORM_S3_BUCKET_NAME" 2>/dev/null; then
 else
     echo "Creating bucket $TERRAFORM_S3_BUCKET_NAME..."
     aws s3 mb "s3://$TERRAFORM_S3_BUCKET_NAME" --region $aws_region
-    echo "Terraform Bucket created successfully"
+    # The state contains generated secrets: keep the bucket private explicitly and versioned for recovery
+    aws s3api put-public-access-block --bucket "$TERRAFORM_S3_BUCKET_NAME" \
+        --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+    aws s3api put-bucket-versioning --bucket "$TERRAFORM_S3_BUCKET_NAME" --versioning-configuration Status=Enabled
+    echo "Terraform Bucket created successfully (public access blocked, versioning enabled)"
 fi
 
 cd litellm-terraform-stack
