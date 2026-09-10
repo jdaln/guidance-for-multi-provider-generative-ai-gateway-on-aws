@@ -101,8 +101,11 @@ module "ecs_cluster" {
   langfuse_public_key = var.langfuse_public_key
   langfuse_secret_key = var.langfuse_secret_key
   langfuse_host = var.langfuse_host
-
-  depends_on = [ module.base ]
+  # Explicit dependency on the uploaded config instead of a module-wide depends_on: a module-level
+  # depends_on defers every data source of the module to apply time whenever anything in module.base
+  # changes, which made the Route53 records and the ACM validation "known after apply" (and therefore
+  # replaced) on each config redeploy.
+  config_object_etag = module.base.ConfigObjectEtag
 }
 
 data "aws_subnets" "private" {

@@ -35,6 +35,12 @@ variable "config_bucket_name" {
   type        = string
 }
 
+variable "config_object_etag" {
+  description = "ETag of the uploaded config.yaml; injected into the task definition so a config change rolls out a new task revision"
+  type        = string
+  default     = ""
+}
+
 variable "redis_host" {
   description = "The Redis host name"
   type        = string

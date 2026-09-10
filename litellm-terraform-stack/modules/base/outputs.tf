@@ -60,6 +60,11 @@ output "ConfigBucketArn" {
   value       = aws_s3_bucket.config_bucket.arn
 }
 
+output "ConfigObjectEtag" {
+  description = "ETag of the uploaded config.yaml (changes whenever the config changes)"
+  value       = aws_s3_object.config_file.etag
+}
+
 output "WafAclArn" {
   description = "The ARN of the WAF ACL"
   value       = aws_wafv2_web_acl.litellm_waf.arn
