@@ -42,8 +42,8 @@ if [ ! -f "config/config.yaml" ]; then
 fi
 
 if [ ! -f ".env" ]; then
-    echo "Error: .env file missing. Creating it from .env.template"
-    cp .env.template .env
+    echo "Error: .env file missing. Copy .env.template to .env, fill in your values and run again."
+    exit 1
 fi
 
 SKIP_BUILD=false
