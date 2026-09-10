@@ -55,8 +55,12 @@ From a root session with the CLI (or paste the same policy in the console):
 
 ```bash
 aws iam create-user --user-name gateway-deployer
-aws iam put-user-policy --user-name gateway-deployer --policy-name gateway-deployer \
-  --policy-document file://deploy/iam/gateway-deployer-policy.json
+# A customer-managed policy: inline user policies are limited to 2048 bytes, this one is larger
+aws iam create-policy --policy-name gateway-deployer \
+  --policy-document file://deploy/iam/gateway-deployer-policy.json \
+  --query Policy.Arn --output text
+aws iam attach-user-policy --user-name gateway-deployer \
+  --policy-arn arn:aws:iam::<account-id>:policy/gateway-deployer
 aws iam create-access-key --user-name gateway-deployer
 ```
 
@@ -224,7 +228,7 @@ drop to one task and a single-AZ database for a pilot to save about $100.
 ## 7. End-of-session rotation checklist
 
 1. `aws iam delete-access-key --user-name gateway-deployer --access-key-id <id>` (recreate one for
-   the next deployment; or delete the user until needed).
+   the next deployment; or detach the policy and delete the user until needed).
 2. If a virtual key or the master key was ever displayed in a shared terminal or chat, rotate it:
    virtual keys via `/key/delete` and `scripts/create-virtual-key.sh`; the master key by updating
    `LITELLM_MASTER_KEY` in the `LiteLLMMasterSalt-*` secret and running `./deploy.sh --skip-build`
