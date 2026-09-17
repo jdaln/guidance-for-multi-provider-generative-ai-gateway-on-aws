@@ -33,6 +33,9 @@ module "base" {
   redis_node_type = var.redis_node_type
   redis_num_cache_clusters = var.redis_num_cache_clusters
   use_route53 = var.use_route53
+  rds_snapshot_identifier = var.rds_snapshot_identifier
+  litellm_master_key_override = var.litellm_master_key_override
+  litellm_salt_key_override = var.litellm_salt_key_override
 }
 
 module "ecs_cluster" {

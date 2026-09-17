@@ -69,6 +69,12 @@ TRACKING_STACK_NAME="tracking-stack"
 # Load environment variables from .env file
 source .env
 
+# Wake-time inputs (set by wake.sh in the environment, not in .env):
+#   RDS_SNAPSHOT_IDENTIFIER  restore the database from this snapshot instead of creating an empty one
+#   REUSE_SECRETS_FROM       Secrets Manager secret holding a saved LITELLM_MASTER_KEY / LITELLM_SALT_KEY to reuse
+RDS_SNAPSHOT_IDENTIFIER="${RDS_SNAPSHOT_IDENTIFIER:-}"
+REUSE_SECRETS_FROM="${REUSE_SECRETS_FROM:-}"
+
 # Auto-detect existing deployments and set defaults for backward compatibility
 if aws cloudformation describe-stacks --stack-name "${TRACKING_STACK_NAME}" &>/dev/null; then
   echo "Detected existing deployment - ensuring backward compatibility"
@@ -364,6 +370,17 @@ export TF_VAR_ecrLitellmRepository=$APP_NAME
 export TF_VAR_ecrMiddlewareRepository=$MIDDLEWARE_APP_NAME
 export TF_VAR_rds_instance_class=$RDS_INSTANCE_CLASS
 export TF_VAR_rds_allocated_storage=$RDS_ALLOCATED_STORAGE_GB
+export TF_VAR_rds_snapshot_identifier="$RDS_SNAPSHOT_IDENTIFIER"
+if [ -n "$RDS_SNAPSHOT_IDENTIFIER" ]; then
+    echo "Database will be restored from snapshot $RDS_SNAPSHOT_IDENTIFIER"
+fi
+if [ -n "$REUSE_SECRETS_FROM" ]; then
+    echo "Reusing LiteLLM master and salt keys from secret $REUSE_SECRETS_FROM"
+    SAVED_SECRETS=$(aws secretsmanager get-secret-value --secret-id "$REUSE_SECRETS_FROM" --query SecretString --output text)
+    export TF_VAR_litellm_master_key_override=$(printf '%s' "$SAVED_SECRETS" | yq -r '.LITELLM_MASTER_KEY')
+    export TF_VAR_litellm_salt_key_override=$(printf '%s' "$SAVED_SECRETS" | yq -r '.LITELLM_SALT_KEY')
+    unset SAVED_SECRETS
+fi
 export TF_VAR_redis_node_type=$REDIS_NODE_TYPE
 export TF_VAR_redis_num_cache_clusters=$REDIS_NUM_CACHE_CLUSTERS
 export TF_VAR_disable_swagger_page=$DISABLE_SWAGGER_PAGE

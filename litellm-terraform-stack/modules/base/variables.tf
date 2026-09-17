@@ -80,3 +80,23 @@ variable "use_route53" {
   type        = bool
   default     = false
 }
+
+variable "rds_snapshot_identifier" {
+  description = "Restore the LiteLLM database from this RDS snapshot instead of creating an empty one (used by wake.sh). Ignored after the first apply."
+  type        = string
+  default     = ""
+}
+
+variable "litellm_master_key_override" {
+  description = "Reuse this LiteLLM master key instead of generating a new one (used by wake.sh to restore a hibernated gateway)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "litellm_salt_key_override" {
+  description = "Reuse this LiteLLM salt key instead of generating a new one. Must match the database being restored: stored credentials are encrypted with it."
+  type        = string
+  default     = ""
+  sensitive   = true
+}

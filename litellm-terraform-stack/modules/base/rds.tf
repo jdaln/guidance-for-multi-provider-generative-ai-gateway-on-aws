@@ -75,7 +75,9 @@ resource "aws_db_instance" "database" {
   storage_type              = "gp3"
   allocated_storage         = var.rds_allocated_storage
   storage_encrypted         = true
-  db_name                      = "litellm"
+  # Restoring from a snapshot: the database name comes from the snapshot
+  db_name                      = var.rds_snapshot_identifier != "" ? null : "litellm"
+  snapshot_identifier          = var.rds_snapshot_identifier != "" ? var.rds_snapshot_identifier : null
   db_subnet_group_name      = aws_db_subnet_group.main.name
   vpc_security_group_ids    = [aws_security_group.db_sg.id]
   username                  = jsondecode(aws_secretsmanager_secret_version.db_secret_main_version.secret_string)["username"]
@@ -91,4 +93,9 @@ resource "aws_db_instance" "database" {
   parameter_group_name = aws_db_parameter_group.example_pg.name
   copy_tags_to_snapshot     = true
   apply_immediately = true
+
+  lifecycle {
+    # snapshot_identifier only matters at creation; forgetting it on later applies must not replace the instance
+    ignore_changes = [snapshot_identifier]
+  }
 }

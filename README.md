@@ -211,6 +211,11 @@ This provides a robust defense against direct ALB access even if someone discove
 
 **NOTE** For any guidance deployment, either Amazon ECS or EKS container orchestration platform can be used, but not both.
 
+**Hibernate / wake (ECS).** `./hibernate.sh` saves the LiteLLM master and salt keys to a Secrets Manager
+secret, archives the audit logs, snapshots the database and then runs `undeploy.sh`, so only a database
+snapshot, the buckets and the DNS zone keep costing money. `./wake.sh` redeploys from the latest snapshot
+with the same keys: same URL, same master key, all virtual keys, budgets and spend history intact.
+
 ## Cost
 
 ### Cost Considerations
