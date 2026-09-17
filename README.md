@@ -215,6 +215,11 @@ This provides a robust defense against direct ALB access even if someone discove
 
 **NOTE** The middleware sidecar (Bedrock-format API, chat history, Okta JWT auth) is optional on ECS: set `ENABLE_MIDDLEWARE="false"` in `.env` to run LiteLLM alone, in which case every path (including `/v1/chat/completions`, `/key/generate` and `/user/new`) is served by LiteLLM directly and its native error codes reach the clients.
 
+**Hibernate / wake (ECS).** `./hibernate.sh` saves the LiteLLM master and salt keys to a Secrets Manager
+secret, archives the audit logs, snapshots the database and then runs `undeploy.sh`, so only a database
+snapshot, the buckets and the DNS zone keep costing money. `./wake.sh` redeploys from the latest snapshot
+with the same keys: same URL, same master key, all virtual keys, budgets and spend history intact.
+
 ## Cost
 
 ### Cost Considerations

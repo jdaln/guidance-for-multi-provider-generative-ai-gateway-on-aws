@@ -439,3 +439,23 @@ variable "langfuse_host" {
   description = "the hostname of your langfuse deployment. Optional, defaults to https://cloud.langfuse.com"
   default = "https://cloud.langfuse.com"
 }
+
+variable "rds_snapshot_identifier" {
+  description = "Restore the LiteLLM database from this RDS snapshot (wake.sh). Empty creates a new database."
+  type        = string
+  default     = ""
+}
+
+variable "litellm_master_key_override" {
+  description = "Reuse an existing LiteLLM master key (wake.sh). Empty generates a new one."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "litellm_salt_key_override" {
+  description = "Reuse an existing LiteLLM salt key (wake.sh). Empty generates a new one."
+  type        = string
+  default     = ""
+  sensitive   = true
+}

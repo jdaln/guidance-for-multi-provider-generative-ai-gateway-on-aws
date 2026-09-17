@@ -26,8 +26,8 @@ resource "aws_secretsmanager_secret" "litellm_master_salt" {
 }
 
 locals {
-  litellm_master_key = "sk-${random_password.litellm_master.result}"
-  litellm_salt_key = "sk-${random_password.litellm_salt.result}"
+  litellm_master_key = var.litellm_master_key_override != "" ? var.litellm_master_key_override : "sk-${random_password.litellm_master.result}"
+  litellm_salt_key   = var.litellm_salt_key_override != "" ? var.litellm_salt_key_override : "sk-${random_password.litellm_salt.result}"
 }
 
 # Store the generated values

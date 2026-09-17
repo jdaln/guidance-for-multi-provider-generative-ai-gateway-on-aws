@@ -40,6 +40,9 @@ module "base" {
   use_route53 = var.use_route53
   # WAF IP allow-list only makes sense when clients hit the ALB directly (CloudFront would be the client)
   waf_allowed_cidrs = var.use_cloudfront ? [] : var.alb_allowed_cidrs
+  rds_snapshot_identifier = var.rds_snapshot_identifier
+  litellm_master_key_override = var.litellm_master_key_override
+  litellm_salt_key_override = var.litellm_salt_key_override
 }
 
 module "ecs_cluster" {
