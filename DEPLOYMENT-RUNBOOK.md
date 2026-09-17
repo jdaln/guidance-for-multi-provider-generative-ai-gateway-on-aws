@@ -248,9 +248,19 @@ Use it to watch spend per key; create keys with the script so they get the three
 
 ## 5. Everyday operations
 
+- **Add a user**: `./scripts/create-user.sh name@example.org` (with `GATEWAY_URL` and `LITELLM_MASTER_KEY`
+  exported). Creates an internal user who can log into the Admin UI with their email and the printed
+  password (they see only their own keys and spend) plus one API key with the 6h / 24h / 7d windows.
+  `--list` shows users and spend, `--delete <user_id>` removes a user and their keys.
+- **Take the gateway offline without losing anything**: `./hibernate.sh` (asks for confirmation, then
+  about 15 minutes). Keeps a database snapshot (about USD 2 per month), the saved keys in Secrets Manager
+  and the archived audit logs; everything else is destroyed. `./wake.sh` brings it back unchanged in
+  about 40 minutes (same URL, master key, users, keys, budgets, history). While hibernated the cost is
+  about USD 3 per month.
+
 - **Change models or settings**: edit `config/default-config-eu-north-1.yaml` or
   `config/default-config-base.yaml`, delete `config/config.yaml` (generated), run
-  `./deploy.sh --skip-build`. The new config is uploaded to S3 and the service restarts.
+  `./deploy.sh --skip-build`. The new config is uploaded to S3 and the service rolls a new task revision.
 - **Change allowed IPs**: edit `ALB_ALLOWED_CIDRS`, run `./deploy.sh --skip-build`.
 - **Upgrade LiteLLM**: set `LITELLM_VERSION` to a newer `vX.Y.Z` release, check its release notes,
   run `./deploy.sh` with `DESIRED_CAPACITY="1"` first (migration), then scale back to 2.

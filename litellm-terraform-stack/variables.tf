@@ -459,3 +459,10 @@ variable "litellm_salt_key_override" {
   default     = ""
   sensitive   = true
 }
+
+variable "ui_password_override" {
+  description = "Reuse an existing Admin UI password (wake.sh). Empty generates a new one."
+  type        = string
+  default     = ""
+  sensitive   = true
+}

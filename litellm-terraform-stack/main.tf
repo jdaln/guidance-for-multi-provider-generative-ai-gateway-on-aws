@@ -43,6 +43,7 @@ module "base" {
   rds_snapshot_identifier = var.rds_snapshot_identifier
   litellm_master_key_override = var.litellm_master_key_override
   litellm_salt_key_override = var.litellm_salt_key_override
+  ui_password_override = var.ui_password_override
 }
 
 module "ecs_cluster" {

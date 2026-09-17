@@ -37,7 +37,7 @@ resource "aws_secretsmanager_secret_version" "litellm_master_salt_ver" {
   secret_string = jsonencode({
     LITELLM_MASTER_KEY = local.litellm_master_key
     LITELLM_SALT_KEY   = local.litellm_salt_key
-    UI_PASSWORD        = random_password.litellm_ui_password.result
+    UI_PASSWORD        = var.ui_password_override != "" ? var.ui_password_override : random_password.litellm_ui_password.result
   })
 }
 

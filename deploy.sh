@@ -476,6 +476,7 @@ if [ -n "$REUSE_SECRETS_FROM" ]; then
     SAVED_SECRETS=$(aws secretsmanager get-secret-value --secret-id "$REUSE_SECRETS_FROM" --query SecretString --output text)
     export TF_VAR_litellm_master_key_override=$(printf '%s' "$SAVED_SECRETS" | yq -r '.LITELLM_MASTER_KEY')
     export TF_VAR_litellm_salt_key_override=$(printf '%s' "$SAVED_SECRETS" | yq -r '.LITELLM_SALT_KEY')
+    export TF_VAR_ui_password_override=$(printf '%s' "$SAVED_SECRETS" | yq -r '.UI_PASSWORD // ""')
     unset SAVED_SECRETS
 fi
 export TF_VAR_redis_node_type=$REDIS_NODE_TYPE
