@@ -34,7 +34,16 @@ BUDGET_6H="${BUDGET_6H:-30}"; BUDGET_24H="${BUDGET_24H:-75}"; BUDGET_7D="${BUDGE
 PASSWORD="${USER_PASSWORD:-$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)}"
 MODELS_JSON=$(printf '%s' "$MODELS" | tr -d ' ' | awk -F, '{for(i=1;i<=NF;i++){printf "%s\"%s\"", (i>1?",":""), $i}}')
 
-USER_RESPONSE=$(curl -sS --fail-with-body "${BASE}/user/new" "${auth[@]}" --data "{
+# Call the API; on a non-2xx answer print the body (LiteLLM's error message) and stop
+api() {
+  local path="$1" body="$2" out
+  if ! out=$(curl -sS --fail-with-body "${BASE}${path}" "${auth[@]}" --data "$body"); then
+    echo "Error from ${path}:" >&2; printf '%s\n' "$out" >&2; exit 1
+  fi
+  printf '%s' "$out"
+}
+
+USER_RESPONSE=$(api /user/new "{
   \"user_email\": \"${EMAIL}\",
   \"user_alias\": \"${EMAIL%%@*}\",
   \"user_role\": \"internal_user\",
@@ -46,7 +55,7 @@ USER_RESPONSE=$(curl -sS --fail-with-body "${BASE}/user/new" "${auth[@]}" --data
 }")
 USER_ID=$(printf '%s' "$USER_RESPONSE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["user_id"])')
 
-KEY_RESPONSE=$(curl -sS --fail-with-body "${BASE}/key/generate" "${auth[@]}" --data "{
+KEY_RESPONSE=$(api /key/generate "{
   \"user_id\": \"${USER_ID}\",
   \"key_alias\": \"${EMAIL}\",
   \"models\": [${MODELS_JSON}],
