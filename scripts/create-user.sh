@@ -47,13 +47,15 @@ USER_RESPONSE=$(api /user/new "{
   \"user_email\": \"${EMAIL}\",
   \"user_alias\": \"${EMAIL%%@*}\",
   \"user_role\": \"internal_user\",
-  \"password\": \"${PASSWORD}\",
   \"auto_create_key\": false,
   \"models\": [${MODELS_JSON}],
   \"max_budget\": ${BUDGET_7D},
   \"budget_duration\": \"7d\"
 }")
 USER_ID=$(printf '%s' "$USER_RESPONSE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["user_id"])')
+
+# The UI password is a documented field of /user/update (not of /user/new), so set it in a second call
+api /user/update "{\"user_id\": \"${USER_ID}\", \"password\": \"${PASSWORD}\"}" >/dev/null
 
 KEY_RESPONSE=$(api /key/generate "{
   \"user_id\": \"${USER_ID}\",
