@@ -31,7 +31,8 @@ esac
 EMAIL="${1:?usage: $0 <email> [models] | --list | --delete <user_id>}"
 MODELS="${2:-claude-opus-4-6-eu,claude-opus-5-eu,claude-sonnet-5-eu,claude-haiku-4-5-eu,claude-fable-5-global,claude-fable-5-1-global,gpt-5.6-sol-global,gpt-5.6-terra-global,gpt-6-astra-global}"
 BUDGET_6H="${BUDGET_6H:-30}"; BUDGET_24H="${BUDGET_24H:-75}"; BUDGET_7D="${BUDGET_7D:-300}"
-PASSWORD="${USER_PASSWORD:-$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20)}"
+# (no pipeline here: under `set -o pipefail` a tr|head pipe reports SIGPIPE as a failure and the script would exit silently)
+PASSWORD="${USER_PASSWORD:-$(python3 -c 'import secrets; print(secrets.token_urlsafe(15))')}"
 MODELS_JSON=$(printf '%s' "$MODELS" | tr -d ' ' | awk -F, '{for(i=1;i<=NF;i++){printf "%s\"%s\"", (i>1?",":""), $i}}')
 
 # Call the API; on a non-2xx answer print the body (LiteLLM's error message) and stop
